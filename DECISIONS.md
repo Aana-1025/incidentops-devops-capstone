@@ -196,6 +196,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** An operator must delete or reassign incidents before deleting their service. Reopened incidents begin a new unresolved period while retaining the original creation-based SLA deadline; a future policy model would require a separate reviewed decision.
 
+## ADR-019 — Keep frontend state local and API access centralized
+
+**Status:** Accepted
+
+**Decision:** Use React component state for this single-page operations dashboard and keep all HTTP behavior in `frontend/src/services/api.js`. The browser calls relative `/api` routes, while Vite proxies local development traffic to FastAPI.
+
+**Why:** IncidentOps currently has one cohesive dashboard and does not need a global state dependency. Centralized request handling provides consistent friendly errors, keeps credentials and database details out of components, and preserves the same-origin production design.
+
+**Consequence:** Mutations refresh incidents, services, and statistics from PostgreSQL instead of inventing optimistic values. If the product later grows into multiple routed applications, state architecture can be reviewed with measured need.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.

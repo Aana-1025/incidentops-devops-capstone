@@ -1,6 +1,13 @@
-const navItems = ['Overview', 'Incidents', 'Services', 'Reliability']
+import PropTypes from 'prop-types'
 
-function Sidebar() {
+const navItems = [
+  { label: 'Overview', href: '#overview', icon: '⌂' },
+  { label: 'Incidents', href: '#incidents', icon: '!' },
+  { label: 'Services', href: '#services', icon: '◇' },
+  { label: 'Metrics', href: '#metrics', icon: '↗' },
+]
+
+function Sidebar({ connected }) {
   return (
     <aside className="sidebar">
       <a className="brand" href="#top" aria-label="IncidentOps home">
@@ -14,26 +21,29 @@ function Sidebar() {
       <nav aria-label="Primary navigation">
         {navItems.map((item, index) => (
           <a
-            className={index === 0 ? 'nav-link active' : 'nav-link disabled'}
-            href={index === 0 ? '#top' : `#${item.toLowerCase()}`}
-            aria-disabled={index !== 0}
-            key={item}
+            className={index === 0 ? 'nav-link active' : 'nav-link'}
+            href={item.href}
+            key={item.label}
           >
-            <span className="nav-dot" aria-hidden="true" />
-            {item}
+            <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+            <span>{item.label}</span>
           </a>
         ))}
       </nav>
 
       <div className="sidebar-note">
-        <span className="status-dot" aria-hidden="true" />
+        <span className={`status-dot ${connected ? '' : 'offline'}`} aria-hidden="true" />
         <div>
-          <strong>Foundation online</strong>
-          <small>Live incident data arrives in the next milestone.</small>
+          <strong>{connected ? 'Live API connected' : 'API unavailable'}</strong>
+          <small>{connected ? 'PostgreSQL-backed operations data' : 'Start the backend and retry'}</small>
         </div>
       </div>
     </aside>
   )
+}
+
+Sidebar.propTypes = {
+  connected: PropTypes.bool.isRequired,
 }
 
 export default Sidebar

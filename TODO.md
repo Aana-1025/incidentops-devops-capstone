@@ -29,12 +29,12 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 
 ## M2 — Backend and database
 
-- [ ] Configure FastAPI, settings, CORS, SQLAlchemy, and PostgreSQL session.
+- [x] Configure FastAPI, settings, SQLAlchemy, PostgreSQL session, and same-origin API access.
 - [x] Define `Service` and `Incident` models with constraints and relationship.
 - [x] Define validated create/update/output schemas.
 - [x] Create Alembic configuration and initial migration.
 - [x] Implement `/`, `/health`, database-aware `/ready`, and `/metrics`.
-- [x] Implement service list/create endpoints.
+- [x] Implement service list/detail/create/update/delete endpoints.
 - [x] Implement incident list/detail/create/update/delete endpoints.
 - [x] Implement dashboard statistics endpoint.
 - [x] Set/clear `resolved_at` correctly during status changes.
@@ -45,14 +45,14 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 
 - [x] Scaffold React/Vite without TaskBoard code or branding.
 - [x] Build IncidentOps navigation/header and responsive layout.
-- [ ] Build operational KPI/SLA-risk cards.
-- [ ] Build incident filters, list/table, and severity/status badges.
-- [ ] Build create/edit incident form with validation.
-- [ ] Add acknowledge/investigate/resolve actions.
-- [ ] Build service list/create interface.
-- [ ] Add loading, empty, error, retry, and success states.
-- [ ] Confirm same-origin `/api` integration.
-- [ ] Verify mobile, tablet, and desktop layouts.
+- [x] Build operational KPI/SLA-risk cards.
+- [x] Build incident filters, list/table, and severity/status badges.
+- [x] Build create/edit incident form with validation.
+- [x] Add acknowledge/investigate/resolve actions.
+- [x] Build service list/create/edit/delete interface.
+- [x] Add loading, empty, error, retry, and success states.
+- [x] Confirm same-origin `/api` integration.
+- [x] Verify mobile, tablet, and desktop layouts.
 
 ## M4 — Tests and quality
 
@@ -64,7 +64,7 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [x] Test 404 responses.
 - [x] Test stats and resolved timestamp behavior.
 - [x] Reach at least ten meaningful tests across at least three endpoints.
-- [ ] Add frontend lint and production-build checks.
+- [x] Add frontend lint and production-build checks.
 - [ ] Capture passing `pytest -v` evidence.
 
 ## M5 — Docker and Compose

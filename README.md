@@ -11,9 +11,9 @@ This repository currently contains the application foundation:
 - A reviewed Alembic migration verified against the local PostgreSQL 17 development database, including downgrade and re-upgrade.
 - Validated Pydantic create, update, and response schemas used by the live CRUD API.
 - Database-backed Service and Incident CRUD, incident filters, dashboard statistics, and derived SLA status responses.
-- A responsive React/Vite IncidentOps dashboard shell with clearly marked placeholder data.
+- A responsive React/Vite operations dashboard connected to the live API, with incident and service CRUD, API-backed filters, KPI statistics, lifecycle controls, and derived SLA status.
 
-Frontend CRUD integration, full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
+Full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
 
 ## Stack
 
@@ -106,14 +106,31 @@ On macOS or Linux, use `.venv/bin/python -m pytest -v`. Tests use the dedicated 
 
 ## Frontend development
 
+Start PostgreSQL and the backend first. In a second PowerShell terminal, run:
+
 ```powershell
 Set-Location frontend
 npm install
 npm run dev
 ```
 
-The Vite development server runs at `http://localhost:3000`. Run `npm run lint` and `npm run build` before committing frontend changes.
+Open `http://localhost:3000`. Vite proxies browser requests from `/api` to the host-run FastAPI server at `http://127.0.0.1:8000`, so no browser-specific backend URL is embedded in the application.
+
+The complete local startup order is:
+
+1. `docker compose up -d postgres`
+2. From `backend/`, run `.venv\Scripts\python -m alembic upgrade head` and then `.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000`.
+3. From `frontend/`, run `npm run dev`.
+
+Useful URLs:
+
+- Dashboard: `http://localhost:3000`
+- Backend readiness: `http://localhost:8000/ready`
+- Swagger API documentation: `http://localhost:8000/docs`
+- Prometheus metrics: `http://localhost:8000/metrics`
+
+Validate frontend changes with `npm run lint` and `npm run build`.
 
 ## Planned full-stack integration
 
-PostgreSQL is now available through Docker Compose. Backend and frontend containers will be added in a later milestone; until then, frontend placeholder metrics are intentional and both applications run directly on the host.
+PostgreSQL is available through Docker Compose. Backend and frontend containers will be added in a later milestone; until then, both applications run directly on the host and the Vite development proxy provides same-origin `/api` access.

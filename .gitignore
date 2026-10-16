@@ -53,6 +53,9 @@ yarn-error.log*
 pnpm-debug.log*
 *.tsbuildinfo
 
+# Local-only frontend design reference
+frontendRef.png
+
 # Terraform local state and sensitive inputs
 .terraform/
 *.tfstate

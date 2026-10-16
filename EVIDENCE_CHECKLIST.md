@@ -21,6 +21,8 @@
 - [ ] `m1-08-alembic.png`: `alembic current` and migration upgrade output.
 - [ ] Short browser recording proves create, read, update, and delete through the UI/API.
 
+Reproduce the local UI evidence with PostgreSQL on `localhost:5433`, FastAPI on `localhost:8000`, and Vite on `localhost:3000`. Use temporary records, demonstrate API-backed filters and the Open → Investigating → Resolved transition, then remove the records so the empty state is visible again.
+
 ## Testing — M2
 
 - [ ] `m2-01-pytest.png`: complete `cd backend` / `pytest -v` command and the final passing summary in one readable terminal capture.
