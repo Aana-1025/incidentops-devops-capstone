@@ -69,15 +69,15 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 
 ## M5 — Docker and Compose
 
-- [ ] Create non-root backend Dockerfile.
-- [ ] Create multi-stage, non-root frontend Dockerfile.
-- [ ] Create secure Nginx same-origin proxy configuration.
-- [ ] Add frontend/backend `.dockerignore` files.
-- [ ] Define frontend, backend, and PostgreSQL in Compose.
+- [x] Create non-root backend Dockerfile.
+- [x] Create multi-stage, non-root frontend Dockerfile.
+- [x] Create secure Nginx same-origin proxy configuration.
+- [x] Add frontend/backend `.dockerignore` files.
+- [x] Define frontend, backend, and PostgreSQL in Compose.
 - [x] Add health checks and durable local database volume.
-- [ ] Run `docker compose config` and both image builds.
-- [ ] Prove runtime UIDs are non-root.
-- [ ] Prove `docker compose up --build` makes all services healthy.
+- [x] Run `docker compose config` and both image builds.
+- [x] Prove runtime UIDs are non-root.
+- [x] Prove `docker compose up --build` makes all services healthy.
 - [ ] Capture terminal and browser evidence.
 
 ## M6 — CI/CD, GHCR, and Trivy

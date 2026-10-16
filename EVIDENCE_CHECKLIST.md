@@ -48,6 +48,8 @@ Reproduce the local UI evidence with PostgreSQL on `localhost:5433`, FastAPI on 
 - [ ] `m4-05-nonroot.png`: runtime identity/UID proves backend and frontend are non-root.
 - [ ] Source evidence includes backend Dockerfile, frontend multi-stage Dockerfile, and Compose file.
 
+Reproduce this evidence from the repository root with `docker compose up --build -d`, `docker compose ps`, `docker compose exec backend id`, and `docker compose exec frontend id`. Then load `http://localhost:3000`; capture screenshots manually only after all three services report healthy, and do not expose environment values.
+
 ## GitHub Actions and GHCR — M5
 
 - [ ] Save the successful GitHub Actions run URL.

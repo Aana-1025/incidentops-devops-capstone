@@ -12,8 +12,9 @@ This repository currently contains the application foundation:
 - Validated Pydantic create, update, and response schemas used by the live CRUD API.
 - Database-backed Service and Incident CRUD, incident filters, dashboard statistics, and derived SLA status responses.
 - A responsive React/Vite operations dashboard connected to the live API, with incident and service CRUD, API-backed filters, KPI statistics, lifecycle controls, and derived SLA status.
+- A three-service Docker Compose stack with unprivileged backend and frontend runtimes, automated migrations, health checks, and an Nginx same-origin API proxy.
 
-Full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
+CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
 
 ## Stack
 
@@ -22,9 +23,35 @@ Full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS in
 - **Database:** PostgreSQL
 - **Observability foundation:** Prometheus-compatible `/metrics`
 
-## Local PostgreSQL
+## Run with Docker Compose
 
-Docker Compose runs only the development database in the current milestone. PostgreSQL listens on its normal container port `5432` and is published as `localhost:5433` to avoid conflicting with an existing host database.
+Build and start the complete application from the repository root:
+
+```powershell
+docker compose up --build
+```
+
+The stack applies Alembic migrations before starting the API. Open:
+
+- Dashboard: `http://localhost:3000`
+- Swagger: `http://localhost:8000/docs`
+- Liveness: `http://localhost:8000/health`
+- Database readiness: `http://localhost:8000/ready`
+- Metrics: `http://localhost:8000/metrics`
+
+Inside Docker, the backend reaches PostgreSQL at `postgres:5432`; the browser sends relative `/api` requests to Nginx, which proxies them to `backend:8000`.
+
+Stop the stack while preserving the named PostgreSQL volume:
+
+```powershell
+docker compose down
+```
+
+> **Destructive reset:** `docker compose down -v` removes the IncidentOps PostgreSQL volume and all local application data. Do not use it during normal development.
+
+## Local PostgreSQL and host development
+
+For host-run backend development, PostgreSQL listens on its normal container port `5432` and is published as `localhost:5433` to avoid conflicting with an existing host database.
 
 ```powershell
 docker compose up -d postgres
@@ -39,15 +66,13 @@ On macOS or Linux, replace `.venv\Scripts\python` with `.venv/bin/python`. The h
 postgresql+psycopg://incidentops:incidentops@localhost:5433/incidentops
 ```
 
-When the backend is containerized later, it will use Docker networking and connect to `postgres:5432`, not `localhost:5433`.
+The Compose backend instead uses Docker networking and connects to `postgres:5432`, not `localhost:5433`.
 
 Stop the database without deleting its persistent volume:
 
 ```powershell
 docker compose stop postgres
 ```
-
-> **Destructive reset:** `docker compose down --volumes` permanently deletes the local IncidentOps database volume. Do not use it during normal development.
 
 ## Backend development
 
@@ -130,7 +155,3 @@ Useful URLs:
 - Prometheus metrics: `http://localhost:8000/metrics`
 
 Validate frontend changes with `npm run lint` and `npm run build`.
-
-## Planned full-stack integration
-
-PostgreSQL is available through Docker Compose. Backend and frontend containers will be added in a later milestone; until then, both applications run directly on the host and the Vite development proxy provides same-origin `/api` access.

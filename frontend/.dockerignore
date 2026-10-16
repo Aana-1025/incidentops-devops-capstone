@@ -1,0 +1,13 @@
+.dockerignore
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.vite
+dist
+frontendRef.png
+node_modules
+npm-debug.log*
+*.log
+*.tmp

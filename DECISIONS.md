@@ -206,6 +206,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** Mutations refresh incidents, services, and statistics from PostgreSQL instead of inventing optimistic values. If the product later grows into multiple routed applications, state architecture can be reviewed with measured need.
 
+## ADR-020 — Use unprivileged, migration-gated application containers
+
+**Status:** Accepted
+
+**Decision:** Run the FastAPI image as a dedicated UID/GID 10001 user and the Nginx runtime as its image's UID/GID 101 user. Backend startup must complete `alembic upgrade head` before Uvicorn starts; migration failure terminates the container.
+
+**Why:** Runtime least privilege is explicitly graded and reduces container impact. Gating API startup on migrations prevents a healthy-looking service from running against an outdated schema.
+
+**Consequence:** Compose waits for PostgreSQL health, then backend readiness, before starting the frontend. Nginx listens on unprivileged port 8080 inside its container and is published as host port 3000.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.
