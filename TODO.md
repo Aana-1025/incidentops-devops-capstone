@@ -30,9 +30,9 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 ## M2 — Backend and database
 
 - [ ] Configure FastAPI, settings, CORS, SQLAlchemy, and PostgreSQL session.
-- [ ] Define `Service` and `Incident` models with constraints and relationship.
-- [ ] Define validated create/update/output schemas.
-- [ ] Create Alembic configuration and initial migration.
+- [x] Define `Service` and `Incident` models with constraints and relationship.
+- [x] Define validated create/update/output schemas.
+- [x] Create Alembic configuration and initial migration.
 - [x] Implement `/`, `/health`, database-aware `/ready`, and `/metrics`.
 - [ ] Implement service list/create endpoints.
 - [ ] Implement incident list/detail/create/update/delete endpoints.

@@ -1,5 +1,13 @@
-"""IncidentOps ORM model registry.
+"""IncidentOps ORM model registry used by the application and Alembic."""
 
-Future model modules must be imported here so Alembic can discover their
-metadata during migration generation.
-"""
+from .enums import IncidentSeverity, IncidentStatus, ServiceStatus
+from .incident import Incident
+from .service import Service
+
+__all__ = [
+    "Incident",
+    "IncidentSeverity",
+    "IncidentStatus",
+    "Service",
+    "ServiceStatus",
+]

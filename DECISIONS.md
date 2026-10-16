@@ -166,6 +166,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** Recovery includes deleting/fixing the isolated exercise resources and proving the main app stayed healthy.
 
+## ADR-016 — Derive SLA targets from severity in application code
+
+**Status:** Accepted
+
+**Decision:** Define the initial P1–P4 SLA target durations as an immutable application policy keyed by incident severity. Do not persist a duplicated SLA deadline or target duration on each incident.
+
+**Why:** Severity and timestamps are the source facts needed to calculate SLA risk. A stored derived value could become stale when severity changes and would add migration and synchronization complexity without improving this capstone milestone.
+
+**Consequence:** Future service logic calculates SLA risk from severity, creation time, current time, and resolution time. If policy later varies by service or customer, it can become a dedicated policy model through a reviewed migration.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.

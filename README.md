@@ -7,10 +7,12 @@ IncidentOps is a cloud incident and service reliability management platform bein
 This repository currently contains the application foundation:
 
 - A FastAPI service with metadata, liveness, database-aware readiness, Swagger, and Prometheus metrics endpoints.
-- SQLAlchemy and Alembic configured for PostgreSQL, with migrations intentionally deferred until the domain models exist.
+- SQLAlchemy Service and Incident domain models with controlled lifecycle values and bidirectional relationships.
+- A reviewed Alembic migration that creates the PostgreSQL domain schema; it has not yet been applied to a live PostgreSQL instance.
+- Validated Pydantic create, update, and response schemas ready for the future CRUD API.
 - A responsive React/Vite IncidentOps dashboard shell with clearly marked placeholder data.
 
-Incident and service CRUD, automated test coverage, Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
+Incident and service CRUD, live PostgreSQL migration verification, automated test coverage, Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
 
 ## Stack
 
