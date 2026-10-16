@@ -108,6 +108,7 @@ Before capture: hide account IDs where not needed and never reveal credentials.
 - [ ] `hpa-02-load.png`: controlled load generator running.
 - [ ] `hpa-03-scale.png`: HPA/backend replica count increased, or a recorded explanation if the environment cannot create sufficient safe load.
 - [ ] `hpa-04-after.png`: load stopped and system recovering toward baseline.
+- Capture `kubectl top pods -n incidentops`, `kubectl get hpa -n incidentops`, and the backend Deployment together. The verified local rehearsal scaled from 2 to the configured maximum of 5 and returned to 2 after cleanup.
 
 ## Prometheus and Grafana — M9
 
@@ -117,6 +118,7 @@ Before capture: hide account IDs where not needed and never reveal credentials.
 - [ ] `m9-04-grafana-latency-errors.png`: populated latency or error-rate panel.
 - [ ] `m9-05-monitoring-pods.png`: Prometheus/Grafana workloads running.
 - [ ] Source evidence includes monitoring values and provisioned dashboard artifacts.
+- For target evidence, show the `incidentops-backend` job as `UP` without exposing Kubernetes Secrets. For dashboard evidence, generate controlled requests first and keep the request-rate and p95 panels' live points visible.
 
 ## Troubleshooting demonstration required by the reference README
 

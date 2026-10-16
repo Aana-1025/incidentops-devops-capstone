@@ -118,19 +118,19 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [x] Add matching backend/frontend ClusterIP Services.
 - [x] Add PostgreSQL workload, Service, Secret references, and PVC.
 - [x] Route `/` and `/api` through Ingress using the correct Service ports.
-- [ ] Add backend HPA and document Metrics Server dependency.
-- [ ] Add ServiceMonitor with matching labels and named port.
+- [x] Add backend HPA and document Metrics Server dependency.
+- [x] Add ServiceMonitor with matching labels and named port.
 - [x] Pass `helm lint`, `helm template`, and dry-run checks.
 - [x] Deploy and verify locally before AWS.
 
 ## M9 — Observability, HPA, and troubleshooting
 
-- [ ] Install/configure Prometheus and Grafana locally.
-- [ ] Confirm backend `/metrics` format.
-- [ ] Confirm Prometheus target is UP.
-- [ ] Provision Grafana request-rate, latency, and error panels.
-- [ ] Generate safe controlled traffic and populate panels.
-- [ ] Verify HPA metrics and observe a scale event.
+- [x] Install/configure Prometheus and Grafana locally.
+- [x] Confirm backend `/metrics` format.
+- [x] Confirm Prometheus target is UP.
+- [x] Provision Grafana request-rate, latency, and error panels.
+- [x] Generate safe controlled traffic and populate panels.
+- [x] Verify HPA metrics and observe a scale event.
 - [ ] Add isolated broken-image exercise and runbook.
 - [ ] Add isolated broken-Service exercise and runbook.
 - [ ] Demonstrate diagnosis and recovery for both faults.

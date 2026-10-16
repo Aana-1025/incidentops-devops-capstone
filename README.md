@@ -13,8 +13,9 @@ This repository currently contains the application foundation:
 - Database-backed Service and Incident CRUD, incident filters, dashboard statistics, and derived SLA status responses.
 - A responsive React/Vite operations dashboard connected to the live API, with incident and service CRUD, API-backed filters, KPI statistics, lifecycle controls, and derived SLA status.
 - A three-service Docker Compose stack with unprivileged backend and frontend runtimes, automated migrations, health checks, and an Nginx same-origin API proxy.
+- A locally verified Kubernetes/Helm release with NGINX Ingress, CPU autoscaling, Prometheus scraping, and a provisioned Grafana dashboard.
 
-CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
+CI/CD, local Kubernetes, and application observability are implemented. Terraform/AWS and the isolated troubleshooting exercises remain planned.
 
 ## Stack
 
@@ -216,3 +217,45 @@ kubectl port-forward -n incidentops service/incidentops-backend 18000:8000
 ```
 
 The direct backend forward exposes `/health` and `/ready` at `http://127.0.0.1:18000`. A normal PostgreSQL pod restart preserves data on the PVC. When the local data is no longer needed, uninstall with `helm uninstall incidentops -n incidentops`; this removes the release-owned PVC and its data.
+
+## Autoscaling and observability
+
+The backend HPA maintains 2–5 replicas and targets 50% average CPU utilization. It depends on Metrics Server; Docker Desktop requires the local-only kubelet TLS compatibility flag shown below. The PostgreSQL container and Service continue to use port `5432` inside Kubernetes.
+
+```powershell
+helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm upgrade --install metrics-server metrics-server/metrics-server `
+  --namespace kube-system --version 3.14.0 `
+  --set 'args[0]=--kubelet-insecure-tls' --wait --timeout 5m
+kubectl top nodes
+kubectl get hpa incidentops-backend -n incidentops --watch
+```
+
+`monitoring/kube-prometheus-stack-values.yaml` installs a lightweight, local-only Prometheus and Grafana stack. Prometheus explicitly selects the IncidentOps namespace and the chart-managed ServiceMonitor; Grafana provisions the `IncidentOps Observability` dashboard from source with request-rate, p95-latency, and 5xx-rate panels. No Grafana credential is committed.
+
+```powershell
+helm upgrade --install kube-prometheus-stack `
+  prometheus-community/kube-prometheus-stack `
+  --namespace monitoring --create-namespace --version 92.10.0 `
+  -f .\monitoring\kube-prometheus-stack-values.yaml `
+  --wait --timeout 10m
+kubectl get pods -n monitoring
+kubectl get servicemonitor -n incidentops
+kubectl port-forward -n monitoring service/kube-prometheus-stack-prometheus 9090:9090
+kubectl port-forward -n monitoring service/kube-prometheus-stack-grafana 3001:80
+```
+
+Open Prometheus at `http://127.0.0.1:9090/targets` and confirm `incidentops-backend` is `UP`. Useful queries are `sum(rate(http_requests_total[1m]))`, p95 over `http_request_duration_seconds_bucket`, and the `5..` status rate. Open Grafana at `http://127.0.0.1:3001`; retrieve its generated local admin password directly from the Kubernetes Secret only when needed, and never copy it into files or evidence.
+
+For a controlled HPA demonstration, create a temporary namespaced load Deployment, watch CPU and replicas, and delete that exact Deployment immediately afterward. Keep the load modest for the available local CPU and confirm the application stays ready:
+
+```powershell
+kubectl create deployment incidentops-load -n incidentops `
+  --image=curlimages/curl:8.23.0 -- /bin/sh -c `
+  "while true; do curl -s -o /dev/null http://incidentops-backend:8000/health; done"
+kubectl scale deployment incidentops-load -n incidentops --replicas=4
+kubectl get hpa incidentops-backend -n incidentops --watch
+kubectl delete deployment incidentops-load -n incidentops
+```

@@ -236,6 +236,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** Helm installs and upgrades use `--wait --wait-for-jobs`. PostgreSQL remains one StatefulSet replica on a PVC; frontend and backend remain two replicas. Local traffic enters through the hostless NGINX Ingress, which can be reached through a temporary controller port-forward without changing host networking.
 
+## ADR-023 — Use official local metrics and a selector-scoped monitoring stack
+
+**Status:** Accepted
+
+**Decision:** Install the official Metrics Server chart and a pinned `kube-prometheus-stack` release for local verification. Prometheus selects only ServiceMonitors and namespaces labeled for IncidentOps, and Grafana provisions its application dashboard from the source-controlled monitoring values. Access remains through temporary localhost port-forwards.
+
+**Why:** HPA needs real resource metrics, while explicit discovery labels and provisioned dashboards make the observability proof reproducible without monitoring unrelated workloads or relying on manual UI configuration. Docker Desktop alone requires Metrics Server's kubelet insecure-TLS compatibility argument.
+
+**Consequence:** The backend scales between two and five replicas at a 50% CPU target. Monitoring credentials stay in the generated Kubernetes Secret and never enter Git. The local stack disables unrelated exporters and alerting to reduce resource use; cloud monitoring sizing and TLS must be reviewed separately before AWS deployment.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.

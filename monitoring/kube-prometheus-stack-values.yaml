@@ -1,0 +1,148 @@
+defaultRules:
+  create: false
+
+alertmanager:
+  enabled: false
+
+kubeApiServer:
+  enabled: false
+kubelet:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+coreDns:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kubeStateMetrics:
+  enabled: false
+nodeExporter:
+  enabled: false
+
+prometheusOperator:
+  livenessProbe:
+    failureThreshold: 6
+    timeoutSeconds: 5
+  readinessProbe:
+    failureThreshold: 6
+    timeoutSeconds: 5
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+prometheus:
+  service:
+    type: ClusterIP
+  prometheusSpec:
+    retention: 2h
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector:
+      matchLabels:
+        app.kubernetes.io/part-of: incidentops
+    serviceMonitorNamespaceSelector:
+      matchLabels:
+        app.kubernetes.io/part-of: incidentops
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+grafana:
+  enabled: true
+  defaultDashboardsEnabled: false
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: grafana
+    initialDelaySeconds: 600
+    failureThreshold: 12
+    timeoutSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: grafana
+    initialDelaySeconds: 30
+    failureThreshold: 18
+    timeoutSeconds: 5
+  service:
+    type: ClusterIP
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  sidecar:
+    dashboards:
+      enabled: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: IncidentOps
+          orgId: 1
+          folder: IncidentOps
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/incidentops
+  dashboards:
+    incidentops:
+      incidentops-observability:
+        json: |-
+          {
+            "annotations": {"list": []},
+            "editable": true,
+            "panels": [
+              {
+                "datasource": {"type": "prometheus", "uid": "prometheus"},
+                "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+                "id": 1,
+                "targets": [{"expr": "sum(rate(http_requests_total[1m]))", "legendFormat": "requests/second", "refId": "A"}],
+                "title": "IncidentOps HTTP request rate",
+                "type": "timeseries"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "prometheus"},
+                "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+                "id": 2,
+                "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95 latency", "refId": "A"}],
+                "title": "IncidentOps p95 request latency",
+                "type": "timeseries"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "prometheus"},
+                "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+                "id": 3,
+                "targets": [{"expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m]))", "legendFormat": "5xx/second", "refId": "A"}],
+                "title": "IncidentOps server error rate",
+                "type": "timeseries"
+              }
+            ],
+            "refresh": "5s",
+            "schemaVersion": 41,
+            "tags": ["incidentops", "observability"],
+            "time": {"from": "now-15m", "to": "now"},
+            "timezone": "browser",
+            "title": "IncidentOps Observability",
+            "uid": "incidentops-observability",
+            "version": 1
+          }
