@@ -273,3 +273,12 @@ kubectl scale deployment incidentops-load -n incidentops --replicas=4
 kubectl get hpa incidentops-backend -n incidentops --watch
 kubectl delete deployment incidentops-load -n incidentops
 ```
+
+## Kubernetes troubleshooting demonstrations
+
+The isolated exercises in `troubleshooting/` reproduce two grading scenarios without modifying the Helm release:
+
+- a Deployment with a nonexistent image tag that reaches `ImagePullBackOff`, then recovers after receiving the live immutable backend image;
+- a healthy demo Pod behind a Service that incorrectly forwards to port `9999`, then returns HTTP 200 after `targetPort` is corrected to `8080`.
+
+Follow [the troubleshooting runbook](troubleshooting/RUNBOOK.md) for the failure, diagnosis, recovery, and cleanup commands. Each resource uses dedicated names and labels. Finish by confirming the troubleshooting label selects no resources and that the real backend, frontend, PostgreSQL, HPA, health, readiness, and database counts remain healthy.

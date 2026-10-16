@@ -133,9 +133,11 @@ Before capture: hide account IDs where not needed and never reveal credentials.
 
 ### Broken Service
 
-- [ ] `trouble-04-no-endpoints.png`: broken Service has no endpoints.
-- [ ] `trouble-05-label-diagnosis.png`: Service selector and Pod labels visibly mismatch.
-- [ ] `trouble-06-service-recovered.png`: corrected endpoints and successful request.
+- [ ] `trouble-04-wrong-target-port.png`: healthy demo Pod exposes `8080` while the Service and EndpointSlice show `9999`.
+- [ ] `trouble-05-service-failure.png`: direct Pod request returns HTTP 200 but the same request through the Service fails.
+- [ ] `trouble-06-port-diagnosis.png`: Service description, EndpointSlice, and Pod container port make the `9999` versus `8080` mismatch visible.
+- [ ] `trouble-07-service-recovered.png`: corrected Service and EndpointSlice use `8080`, and the Service request returns HTTP 200.
+- [ ] `trouble-08-cleanup.png`: troubleshooting label selects no remaining resources and the real IncidentOps Pods are healthy.
 
 ## Final documentation and presentation — M10
 

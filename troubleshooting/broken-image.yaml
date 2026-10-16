@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: incidentops-broken-image-demo
+  namespace: incidentops
+  labels:
+    app.kubernetes.io/name: incidentops-broken-image-demo
+    app.kubernetes.io/part-of: incidentops-troubleshooting
+    incidentops.io/scenario: broken-image
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: incidentops-broken-image-demo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: incidentops-broken-image-demo
+        app.kubernetes.io/part-of: incidentops-troubleshooting
+        incidentops.io/scenario: broken-image
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: demo
+          image: ghcr.io/aana-1025/incidentops-backend:troubleshooting-does-not-exist
+          imagePullPolicy: Always
+          command: ["python", "-m", "http.server", "8080", "--directory", "/tmp"]
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

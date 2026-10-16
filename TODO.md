@@ -132,9 +132,9 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [x] Provision Grafana request-rate, latency, and error panels.
 - [x] Generate safe controlled traffic and populate panels.
 - [x] Verify HPA metrics and observe a scale event.
-- [ ] Add isolated broken-image exercise and runbook.
-- [ ] Add isolated broken-Service exercise and runbook.
-- [ ] Demonstrate diagnosis and recovery for both faults.
+- [x] Add isolated broken-image exercise and runbook.
+- [x] Add isolated broken-Service exercise and runbook.
+- [x] Demonstrate diagnosis and recovery for both faults.
 - [ ] Prepare all observability/troubleshooting evidence.
 
 ## M10 — AWS evidence window
