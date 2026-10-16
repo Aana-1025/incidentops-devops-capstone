@@ -226,6 +226,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** Pull requests execute tests, builds, and scans but never publish. Kubernetes deployment remains a separate later milestone, and no `latest` tag is produced.
 
+## ADR-022 — Run one revision-scoped migration Job before application startup
+
+**Status:** Accepted
+
+**Decision:** Deploy locally on Docker Desktop Kubernetes with the Helm chart's immutable GHCR image tags. Each Helm revision creates one migration Job that waits for the PostgreSQL Service and runs `alembic upgrade head`. Backend init containers wait until Alembic reports every head applied, while the backend container bypasses the Compose entrypoint and starts Uvicorn directly.
+
+**Why:** Two backend replicas must not independently race schema changes. A release-scoped Job gives migrations one owner, and the init gate prevents application replicas from serving against an older schema while still allowing PostgreSQL to be created by the same release.
+
+**Consequence:** Helm installs and upgrades use `--wait --wait-for-jobs`. PostgreSQL remains one StatefulSet replica on a PVC; frontend and backend remain two replicas. Local traffic enters through the hostless NGINX Ingress, which can be reached through a temporary controller port-forward without changing host networking.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.

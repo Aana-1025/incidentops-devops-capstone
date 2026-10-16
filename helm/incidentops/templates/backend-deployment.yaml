@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "incidentops.fullname" . }}-backend
+  labels:
+    {{- include "incidentops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "incidentops.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      annotations:
+        incidentops.io/release-revision: {{ .Release.Revision | quote }}
+      labels:
+        app.kubernetes.io/name: {{ include "incidentops.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: wait-for-migrations
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command:
+            - sh
+            - -ec
+          args:
+            - |
+              until python -m alembic current --check-heads; do
+                echo "Waiting for the migration Job to reach the Alembic head..."
+                sleep 2
+              done
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "incidentops.fullname" . }}-postgresql
+                  key: password
+            - name: DATABASE_URL
+              value: {{ include "incidentops.databaseUrl" . | quote }}
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command:
+            - python
+            - -m
+            - uvicorn
+          args:
+            - app.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+          env:
+            - name: APP_ENV
+              value: kubernetes
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "incidentops.fullname" . }}-postgresql
+                  key: password
+            - name: DATABASE_URL
+              value: {{ include "incidentops.databaseUrl" . | quote }}
+            - name: DATABASE_CONNECT_TIMEOUT_SECONDS
+              value: "3"
+          ports:
+            - name: http
+              containerPort: 8000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            {{- toYaml .Values.backend.livenessProbe | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            {{- toYaml .Values.backend.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL

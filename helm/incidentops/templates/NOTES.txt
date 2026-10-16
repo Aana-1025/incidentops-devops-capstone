@@ -1,0 +1,10 @@
+IncidentOps is installed in namespace {{ .Release.Namespace }}.
+
+Check the release:
+  kubectl get pods,svc,ingress,pvc -n {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+The Ingress routes / to the frontend and /api to the backend.
+{{- else }}
+Ingress is disabled. Port-forward the frontend Service for local access.
+{{- end }}

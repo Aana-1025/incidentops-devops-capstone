@@ -111,17 +111,17 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 
 ## M8 — Kubernetes and Helm
 
-- [ ] Create `k8s/namespace.yaml` for `incidentops`.
-- [ ] Create Helm `Chart.yaml`, values files, helpers, and templates.
-- [ ] Add backend Deployment with at least two replicas, probes, resources, and secure context.
-- [ ] Add frontend Deployment with at least two replicas, probes, resources, and secure context.
-- [ ] Add matching backend/frontend ClusterIP Services.
-- [ ] Add PostgreSQL workload, Service, Secret references, and PVC.
-- [ ] Route `/` and `/api` through Ingress using the correct Service ports.
+- [x] Create `k8s/namespace.yaml` for `incidentops`.
+- [x] Create Helm `Chart.yaml`, values files, helpers, and templates.
+- [x] Add backend Deployment with at least two replicas, probes, resources, and secure context.
+- [x] Add frontend Deployment with at least two replicas, probes, resources, and secure context.
+- [x] Add matching backend/frontend ClusterIP Services.
+- [x] Add PostgreSQL workload, Service, Secret references, and PVC.
+- [x] Route `/` and `/api` through Ingress using the correct Service ports.
 - [ ] Add backend HPA and document Metrics Server dependency.
 - [ ] Add ServiceMonitor with matching labels and named port.
-- [ ] Pass `helm lint`, `helm template`, and dry-run checks.
-- [ ] Deploy and verify locally before AWS.
+- [x] Pass `helm lint`, `helm template`, and dry-run checks.
+- [x] Deploy and verify locally before AWS.
 
 ## M9 — Observability, HPA, and troubleshooting
 

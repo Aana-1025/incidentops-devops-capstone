@@ -96,6 +96,10 @@ Before capture: hide account IDs where not needed and never reveal credentials.
 - [ ] `m8-06-ingress.png`: Ingress host/address and `/` plus `/api` paths.
 - [ ] `m8-07-ingress-browser.png`: application accessed through Ingress hostname or LoadBalancer address.
 - [ ] `m8-08-api-through-ingress.png`: `/api/incidents` reached through Ingress.
+- [ ] `m8-09-pvc.png`: PostgreSQL PVC is `Bound`; a pod restart preserves a temporary record.
+- [ ] `m8-10-self-healing.png`: frontend and backend return to two Ready replicas after one pod from each Deployment is deleted.
+- [ ] `m8-11-helm-upgrade.png`: harmless upgrade completes and `helm list` shows the new deployed revision.
+- [ ] `m8-12-migration-job.png`: the release migration Job completes before both backend replicas become Ready.
 - [ ] Source evidence includes `k8s/namespace.yaml` and complete `helm/incidentops/` chart.
 
 ## HPA evidence required by the reference README/final demo

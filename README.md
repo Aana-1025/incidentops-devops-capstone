@@ -170,3 +170,49 @@ ghcr.io/aana-1025/incidentops-frontend:<full-git-sha>
 The workflow does not publish a `latest` tag and does not deploy to Kubernetes. Package visibility is managed in GitHub Container Registry.
 
 Trivy inspects the operating-system and language-package contents of both runtime images for known `HIGH` and `CRITICAL` CVEs. The initial preflight found unfixed Debian base-image findings plus three fixable Alpine packages in the frontend; moving the backend to the current official Python Alpine image and upgrading the frontend runtime packages produced clean blocking scans without suppressing findings.
+
+## Kubernetes and Helm
+
+The chart in `helm/incidentops/` deploys two frontend replicas, two backend replicas, one PostgreSQL StatefulSet, and a persistent 1 GiB database volume in the `incidentops` namespace. ClusterIP Services keep workloads internal, while a configurable Ingress sends `/` to the frontend and `/api` to the backend. The chart defaults to the verified immutable GHCR tag recorded in `values.yaml`; it never relies on `latest`.
+
+Each application workload has lightweight CPU/memory requests and limits. Backend liveness uses `/health`, backend readiness uses the database-aware `/ready`, and frontend probes request `/`. A revision-scoped migration Job waits for PostgreSQL and runs `alembic upgrade head` once per Helm release; backend init containers wait for the database to reach the Alembic head before Uvicorn starts, avoiding migrations racing across replicas.
+
+Prerequisites are a working Kubernetes context, `kubectl`, Helm, and an Ingress controller. For Docker Desktop Kubernetes, install the free NGINX controller without binding a host LoadBalancer port:
+
+```powershell
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx `
+  --namespace ingress-nginx --create-namespace `
+  --set controller.service.type=NodePort --wait
+```
+
+Validate and install IncidentOps:
+
+```powershell
+kubectl apply --dry-run=client -f .\k8s\namespace.yaml
+helm lint .\helm\incidentops -f .\helm\incidentops\values-local.yaml
+helm template incidentops .\helm\incidentops -n incidentops `
+  -f .\helm\incidentops\values-local.yaml
+kubectl apply -f .\k8s\namespace.yaml
+helm upgrade --install incidentops .\helm\incidentops `
+  --namespace incidentops --create-namespace `
+  -f .\helm\incidentops\values-local.yaml `
+  --wait --wait-for-jobs --timeout 5m
+```
+
+The local chart configuration uses the hostless `nginx` Ingress class and a clearly development-only database password. Supply a secure value outside Git for any non-local environment. To exercise the Ingress locally without editing the hosts file:
+
+```powershell
+kubectl port-forward -n ingress-nginx service/ingress-nginx-controller 8088:80
+```
+
+Open `http://127.0.0.1:8088`; API calls remain same-origin under `/api`. Verify the release with:
+
+```powershell
+kubectl get pods,deployments,svc,ingress,pvc -n incidentops
+helm list -n incidentops
+kubectl port-forward -n incidentops service/incidentops-backend 18000:8000
+```
+
+The direct backend forward exposes `/health` and `/ready` at `http://127.0.0.1:18000`. A normal PostgreSQL pod restart preserves data on the PVC. When the local data is no longer needed, uninstall with `helm uninstall incidentops -n incidentops`; this removes the release-owned PVC and its data.
