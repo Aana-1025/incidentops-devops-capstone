@@ -246,6 +246,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** The backend scales between two and five replicas at a 50% CPU target. Monitoring credentials stay in the generated Kubernetes Secret and never enter Git. The local stack disables unrelated exporters and alerting to reduce resource use; cloud monitoring sizing and TLS must be reviewed separately before AWS deployment.
 
+## ADR-024 — Use a public-subnet, timeboxed EKS demo architecture
+
+**Status:** Accepted
+
+**Decision:** Define one dedicated VPC with two dynamically selected Availability Zones, two public subnets, an Internet Gateway, and one conservative EKS managed node group. Do not create private subnets or a NAT Gateway for the short-lived academic evidence window. Require an explicit trusted `/32` CIDR for the public EKS API and select standard Kubernetes support.
+
+**Why:** The rubric requires a VPC, two public subnets, EKS, and a worker group. Direct Internet Gateway routing avoids the hourly and data-processing cost of NAT while a restricted control-plane CIDR avoids making the Kubernetes API universally reachable. A nullable Kubernetes version lets EKS select its current default instead of aging a hardcoded version into paid extended support.
+
+**Consequence:** This is not a production network reference. Future apply creates chargeable EKS, EC2, EBS, and public IPv4 resources and therefore requires explicit approval, a current price/quota review, a prepared evidence checklist, and same-session destroy. The EBS CSI add-on uses Pod Identity and its scoped AWS-managed policy so the in-cluster PostgreSQL PVC can be provisioned without assigning storage permissions to application pods.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.

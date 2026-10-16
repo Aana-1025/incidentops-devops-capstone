@@ -1,0 +1,27 @@
+region       = "ap-south-1"
+project_name = "incidentops"
+environment  = "demo"
+
+vpc_cidr = "10.0.0.0/16"
+public_subnet_cidrs = [
+  "10.0.1.0/24",
+  "10.0.2.0/24",
+]
+
+# REQUIRED: replace this documentation-only address with the operator's current
+# public IPv4 address plus /32 before planning. Never use 0.0.0.0/0.
+cluster_endpoint_public_access_cidrs = ["198.51.100.10/32"]
+
+# Null lets EKS select its current default standard-support Kubernetes version.
+kubernetes_version = null
+
+node_instance_types = ["t3.medium"]
+node_capacity_type  = "ON_DEMAND"
+node_disk_size_gib  = 20
+node_min_size       = 1
+node_desired_size   = 1
+node_max_size       = 2
+
+additional_tags = {
+  Purpose = "university-capstone"
+}

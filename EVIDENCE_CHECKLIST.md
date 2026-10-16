@@ -85,6 +85,9 @@ Before capture: hide account IDs where not needed and never reveal credentials.
 - [ ] `m7-08-terraform-destroy.png`: destroy completion with removed-resource summary.
 - [ ] `m7-09-post-destroy.png`: console/CLI verification that IncidentOps cluster and cost-driving resources no longer exist.
 - [ ] Source evidence includes all `.tf` files and credential-free `terraform.tfvars.example`.
+- For `m7-01`, show `terraform fmt -check -recursive`, successful `terraform init -backend=false`, and `terraform validate`; do not expose filesystem usernames or credentials unnecessarily.
+- For `m7-02`, capture the plan summary and the VPC/subnet/EKS/node-group resources after replacing the documentation CIDR with the operator's real `/32`; never submit the binary plan file.
+- Before apply evidence, record the approved region, current EKS standard-support version, expected hourly resources, and explicit user approval. Runtime and destroy entries remain incomplete until the paid evidence session genuinely occurs.
 
 ## Kubernetes and Helm — M8
 

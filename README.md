@@ -172,6 +172,20 @@ The workflow does not publish a `latest` tag and does not deploy to Kubernetes. 
 
 Trivy inspects the operating-system and language-package contents of both runtime images for known `HIGH` and `CRITICAL` CVEs. The initial preflight found unfixed Debian base-image findings plus three fixable Alpine packages in the frontend; moving the backend to the current official Python Alpine image and upgrading the frontend runtime packages produced clean blocking scans without suppressing findings.
 
+## Terraform infrastructure
+
+The direct-resource Terraform module in `terraform/` defines the eventual short-lived AWS demo environment: one tagged VPC, two public subnets selected across available Availability Zones, an Internet Gateway and public route table, least-purpose EKS roles, one managed node group, and EBS CSI storage support through EKS Pod Identity. The defaults target `ap-south-1`, one `t3.medium` worker, and a 20 GiB node disk. Region, CIDRs, names, Kubernetes version, instance types, and scaling remain configurable.
+
+Only offline initialization and validation have been completed. No AWS plan was produced and no resource was created. See `terraform/README.md` for the architecture, required `/32` API-access input, cost audit, validation commands, future paid-resource list, and same-session cleanup procedure.
+
+```powershell
+terraform -chdir=terraform fmt -check -recursive
+terraform -chdir=terraform init -backend=false
+terraform -chdir=terraform validate
+```
+
+`terraform apply` and `terraform destroy` are prohibited until the user explicitly approves the paid AWS evidence session. The design contains no NAT Gateway, RDS, Route 53 hosted zone, Elastic IP, cache, or standalone load balancer.
+
 ## Kubernetes and Helm
 
 The chart in `helm/incidentops/` deploys two frontend replicas, two backend replicas, one PostgreSQL StatefulSet, and a persistent 1 GiB database volume in the `incidentops` namespace. ClusterIP Services keep workloads internal, while a configurable Ingress sends `/` to the frontend and `/api` to the backend. The chart defaults to the verified immutable GHCR tag recorded in `values.yaml`; it never relies on `latest`.

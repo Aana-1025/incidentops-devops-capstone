@@ -97,14 +97,15 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 
 ## M7 — Terraform and AWS preparation
 
-- [ ] Pin Terraform and AWS provider versions.
-- [ ] Define region, cluster, node, and tag variables.
-- [ ] Define VPC and at least two public subnets.
-- [ ] Define EKS control plane and one managed worker group.
-- [ ] Add useful outputs and `terraform.tfvars.example`.
-- [ ] Ignore state, plans, variable values, and credentials.
-- [ ] Add cost and cleanup runbook.
-- [ ] Run format, init, validate, and plan only when safe credentials are externally configured.
+- [x] Pin Terraform and AWS provider versions.
+- [x] Define region, cluster, node, and tag variables.
+- [x] Define VPC and at least two public subnets.
+- [x] Define EKS control plane and one managed worker group.
+- [x] Add useful outputs and `terraform.tfvars.example`.
+- [x] Ignore state, plans, variable values, and credentials.
+- [x] Add cost and cleanup runbook.
+- [x] Run Terraform format, offline initialization, and validation without AWS credentials.
+- [ ] Run a real plan only when safe credentials and the operator's `/32` API CIDR are externally configured.
 - [ ] Verify plan is non-empty and error-free.
 - [ ] Capture plan evidence.
 - [!] Obtain explicit user approval before any `terraform apply`.
