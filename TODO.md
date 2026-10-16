@@ -23,7 +23,7 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [x] Add safe `.env.example` files with placeholders only.
 - [x] Confirm TaskBoard names/content were not copied.
 - [x] Make focused commits with meaningful messages.
-- [ ] Reach at least ten meaningful commits before submission.
+- [x] Reach at least ten meaningful commits before submission.
 - [x] Create/connect approved GitHub repository only when authorized.
 - [ ] Ensure repository is public or instructor access is granted.
 
@@ -82,17 +82,18 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 
 ## M6 — CI/CD, GHCR, and Trivy
 
-- [ ] Add workflow triggered on pushes and pull requests to `main`.
-- [ ] Run backend tests before image build.
-- [ ] Run frontend lint/build before image build.
-- [ ] Build frontend and backend images.
-- [ ] Scan both images with Trivy.
-- [ ] Fail on HIGH/CRITICAL findings.
-- [ ] Publish both images to GHCR only after gates pass.
-- [ ] Tag images with Git commit SHA; do not deploy `latest`.
-- [ ] Use least-privilege GitHub Actions permissions.
+- [x] Add workflow triggered on pushes and pull requests to `main`.
+- [x] Run backend tests before image build.
+- [x] Run frontend lint/build before image build.
+- [x] Build frontend and backend images.
+- [x] Scan both images with Trivy.
+- [x] Fail on HIGH/CRITICAL findings.
+- [x] Publish both images to GHCR only after gates pass.
+- [x] Tag images with Git commit SHA; do not deploy `latest`.
+- [x] Use least-privilege GitHub Actions permissions.
 - [ ] Verify a deliberate test failure blocks downstream jobs.
-- [ ] Capture green run URL, screenshots, packages, and scan explanation.
+- [x] Verify a green GitHub Actions run and both SHA-tagged GHCR packages.
+- [ ] Capture Actions, package, and Trivy screenshots.
 
 ## M7 — Terraform and AWS preparation
 
@@ -153,7 +154,7 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 ## M11 — Documentation and submission
 
 - [ ] Finish root README with purpose, architecture, setup, tests, deployment, observability, troubleshooting, costs, cleanup, and evidence links.
-- [ ] Write the 2–3 sentence Trivy result explanation.
+- [x] Write the 2–3 sentence Trivy result explanation.
 - [ ] Assemble an evidence index with dates and commit SHA.
 - [ ] Secret-scan source and Git history.
 - [ ] Audit every rubric row against implementation and evidence.
