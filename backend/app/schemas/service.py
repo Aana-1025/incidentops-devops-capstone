@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from app.models import ServiceStatus
 
@@ -28,6 +28,25 @@ class ServiceUpdate(BaseModel):
     name: ServiceName | None = None
     description: ServiceDescription | None = None
     status: ServiceStatus | None = None
+
+    @model_validator(mode="after")
+    def reject_explicit_nulls(self) -> "ServiceUpdate":
+        """Allow omission for partial updates but reject null database fields."""
+
+        for field in self.model_fields_set:
+            if getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
+
+
+class ServiceSummary(BaseModel):
+    """Compact service information embedded in incident responses."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(gt=0)
+    name: str
+    status: ServiceStatus
 
 
 class ServiceResponse(BaseModel):

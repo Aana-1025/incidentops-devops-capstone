@@ -186,6 +186,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** Development documentation and example configuration must clearly distinguish host execution from container execution. The Compose database remains PostgreSQL-compatible without changing its internal listener.
 
+## ADR-018 — Preserve incident history and derive lifecycle state
+
+**Status:** Accepted
+
+**Decision:** Reopening a resolved incident clears `resolved_at`; resolving an open incident sets it once. Services with any linked incident history return HTTP 409 on deletion. SLA status is derived from severity and timestamps: resolved by the deadline is `MET`, any incident past its deadline is `BREACHED`, and an unresolved incident in the final 20% of its target is `AT_RISK`; otherwise it is `ON_TRACK`.
+
+**Why:** These rules keep lifecycle timestamps internally consistent, prevent accidental loss of incident context, and provide deterministic dashboard data without redundant SLA database columns.
+
+**Consequence:** An operator must delete or reassign incidents before deleting their service. Reopened incidents begin a new unresolved period while retaining the original creation-based SLA deadline; a future policy model would require a separate reviewed decision.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.

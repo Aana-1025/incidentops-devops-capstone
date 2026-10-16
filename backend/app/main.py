@@ -7,6 +7,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from .api import incidents_router, services_router
 from .config import settings
 from .db import engine
 
@@ -14,9 +15,12 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.app_name,
-    description="API foundation for the IncidentOps reliability platform.",
-    version="0.1.0",
+    description="Database-backed API for the IncidentOps reliability platform.",
+    version="0.2.0",
 )
+
+app.include_router(services_router)
+app.include_router(incidents_router)
 
 
 @app.get("/", tags=["system"])

@@ -10,9 +10,10 @@ This repository currently contains the application foundation:
 - SQLAlchemy Service and Incident domain models with controlled lifecycle values and bidirectional relationships.
 - A reviewed Alembic migration verified against the local PostgreSQL 17 development database, including downgrade and re-upgrade.
 - Validated Pydantic create, update, and response schemas ready for the future CRUD API.
+- Database-backed Service and Incident CRUD, incident filters, dashboard statistics, and derived SLA status responses.
 - A responsive React/Vite IncidentOps dashboard shell with clearly marked placeholder data.
 
-Incident and service CRUD, automated test coverage, full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
+Frontend CRUD integration, automated test coverage, full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
 
 ## Stack
 
@@ -70,6 +71,26 @@ Open:
 - Metrics: `http://localhost:8000/metrics`
 
 The checked-in local default connects to the Compose database on `localhost:5433`. Copy `backend/.env.example` to an untracked `backend/.env` only when you need local overrides. `/ready` returns HTTP 200 only while it can query PostgreSQL; otherwise it returns HTTP 503.
+
+## API endpoints
+
+Interactive OpenAPI documentation is available at `http://localhost:8000/docs`.
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/services` | List services in deterministic name order |
+| `GET` | `/api/services/{service_id}` | Get one service |
+| `POST` | `/api/services` | Create a service |
+| `PUT` | `/api/services/{service_id}` | Update supplied service fields |
+| `DELETE` | `/api/services/{service_id}` | Delete a service without incident history |
+| `GET` | `/api/incidents` | List/filter incidents by status, severity, service, or assignee |
+| `GET` | `/api/incidents/stats` | Return database-derived dashboard counts |
+| `GET` | `/api/incidents/{incident_id}` | Get an incident with service and SLA information |
+| `POST` | `/api/incidents` | Declare an incident for an existing service |
+| `PUT` | `/api/incidents/{incident_id}` | Update lifecycle and incident details |
+| `DELETE` | `/api/incidents/{incident_id}` | Delete an incident |
+
+Incident responses derive `sla_target_minutes`, `sla_deadline`, and `sla_status` from severity and timestamps; no redundant SLA columns are stored.
 
 ## Frontend development
 

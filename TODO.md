@@ -34,12 +34,12 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [x] Define validated create/update/output schemas.
 - [x] Create Alembic configuration and initial migration.
 - [x] Implement `/`, `/health`, database-aware `/ready`, and `/metrics`.
-- [ ] Implement service list/create endpoints.
-- [ ] Implement incident list/detail/create/update/delete endpoints.
-- [ ] Implement dashboard statistics endpoint.
-- [ ] Set/clear `resolved_at` correctly during status changes.
+- [x] Implement service list/create endpoints.
+- [x] Implement incident list/detail/create/update/delete endpoints.
+- [x] Implement dashboard statistics endpoint.
+- [x] Set/clear `resolved_at` correctly during status changes.
 - [ ] Add structured errors and logging.
-- [ ] Verify Swagger CRUD and PostgreSQL rows.
+- [x] Verify Swagger CRUD and PostgreSQL rows.
 
 ## M3 — Frontend
 
