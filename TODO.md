@@ -20,7 +20,7 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [x] Initialize Git on user approval.
 - [ ] Create original root README outline and directory scaffold.
 - [x] Add `.gitignore` entries for `.env`, `__pycache__`, `node_modules`, `.venv`, Terraform state/plan files, kubeconfig, coverage, and IDE files.
-- [ ] Add safe `.env.example` files with placeholders only.
+- [x] Add safe `.env.example` files with placeholders only.
 - [ ] Confirm TaskBoard names/content were not copied.
 - [ ] Make focused commits with meaningful messages.
 - [ ] Reach at least ten meaningful commits before submission.
@@ -33,7 +33,7 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [ ] Define `Service` and `Incident` models with constraints and relationship.
 - [ ] Define validated create/update/output schemas.
 - [ ] Create Alembic configuration and initial migration.
-- [ ] Implement `/`, `/health`, database-aware `/ready`, and `/metrics`.
+- [x] Implement `/`, `/health`, database-aware `/ready`, and `/metrics`.
 - [ ] Implement service list/create endpoints.
 - [ ] Implement incident list/detail/create/update/delete endpoints.
 - [ ] Implement dashboard statistics endpoint.
@@ -43,8 +43,8 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 
 ## M3 — Frontend
 
-- [ ] Scaffold React/Vite without TaskBoard code or branding.
-- [ ] Build IncidentOps navigation/header and responsive layout.
+- [x] Scaffold React/Vite without TaskBoard code or branding.
+- [x] Build IncidentOps navigation/header and responsive layout.
 - [ ] Build operational KPI/SLA-risk cards.
 - [ ] Build incident filters, list/table, and severity/status badges.
 - [ ] Build create/edit incident form with validation.
