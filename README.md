@@ -155,3 +155,18 @@ Useful URLs:
 - Prometheus metrics: `http://localhost:8000/metrics`
 
 Validate frontend changes with `npm run lint` and `npm run build`.
+
+## CI/CD and container security
+
+Every push to `main` and every pull request targeting `main` runs the `IncidentOps CI/CD` GitHub Actions workflow. The quality job provisions an ephemeral PostgreSQL 17 service, runs all backend tests against the isolated `incidentops_test` database, then runs frontend lint and the production build.
+
+After quality checks pass, the pipeline builds both runtime images and scans their operating-system and application packages with Trivy. Any known `HIGH` or `CRITICAL` vulnerability fails the job. Only successful scans permit a `main` push to publish these immutable images through the built-in `GITHUB_TOKEN`:
+
+```text
+ghcr.io/aana-1025/incidentops-backend:<full-git-sha>
+ghcr.io/aana-1025/incidentops-frontend:<full-git-sha>
+```
+
+The workflow does not publish a `latest` tag and does not deploy to Kubernetes. Package visibility is managed in GitHub Container Registry.
+
+Trivy inspects the operating-system and language-package contents of both runtime images for known `HIGH` and `CRITICAL` CVEs. The initial preflight found unfixed Debian base-image findings plus three fixable Alpine packages in the frontend; moving the backend to the current official Python Alpine image and upgrading the frontend runtime packages produced clean blocking scans without suppressing findings.

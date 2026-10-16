@@ -216,6 +216,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** Compose waits for PostgreSQL health, then backend readiness, before starting the frontend. Nginx listens on unprivileged port 8080 inside its container and is published as host port 3000.
 
+## ADR-021 — Promote only tested and scanned SHA-tagged images
+
+**Status:** Accepted
+
+**Decision:** GitHub Actions tests the backend against an ephemeral `incidentops_test` PostgreSQL database, lints/builds the frontend, builds both images locally, and blocks publication until both images pass Trivy checks for `HIGH` and `CRITICAL` vulnerabilities. Successful `main` runs publish full-commit-SHA tags to the lowercase `ghcr.io/aana-1025` namespace using `GITHUB_TOKEN`.
+
+**Why:** This order makes the registry a collection of traceable release candidates rather than unverified build output, while meeting the grading requirements without a personal access token.
+
+**Consequence:** Pull requests execute tests, builds, and scans but never publish. Kubernetes deployment remains a separate later milestone, and no `latest` tag is produced.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.

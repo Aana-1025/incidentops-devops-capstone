@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.12.15-alpine3.24
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -7,8 +7,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN groupadd --gid 10001 incidentops \
-    && useradd --uid 10001 --gid incidentops --no-create-home --shell /usr/sbin/nologin incidentops
+RUN addgroup -g 10001 -S incidentops \
+    && adduser -u 10001 -S -D -H -s /sbin/nologin -G incidentops incidentops
 
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir --requirement requirements.txt

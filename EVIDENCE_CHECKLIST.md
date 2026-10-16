@@ -52,12 +52,13 @@ Reproduce this evidence from the repository root with `docker compose up --build
 
 ## GitHub Actions and GHCR — M5
 
-- [ ] Save the successful GitHub Actions run URL.
+- [ ] Save the successful GitHub Actions run URL in `evidence/README.md` with its exact commit SHA.
 - [ ] `m5-01-actions-green.png`: overall green workflow with commit SHA.
 - [ ] `m5-02-test-job.png`: backend test and frontend build steps passed.
 - [ ] `m5-03-image-builds.png`: both image builds passed.
 - [ ] `m5-04-ghcr-backend.png`: backend GHCR package with SHA tag.
 - [ ] `m5-05-ghcr-frontend.png`: frontend GHCR package with SHA tag.
+- [ ] `m5-06-ghcr-packages.png`: both package names and their matching full-SHA tags visible together where GitHub permits.
 - [ ] Verify displayed tag is a commit SHA and not `latest`.
 - [ ] Source evidence includes `.github/workflows/ci-cd.yml` and `on: push: branches: [main]`.
 - [ ] Demonstration artifact: optional failed-run screenshot proving failed tests block publish/deploy.
@@ -66,6 +67,7 @@ Reproduce this evidence from the repository root with `docker compose up --build
 
 - [ ] `m6-01-trivy-backend.png`: backend scan output.
 - [ ] `m6-02-trivy-frontend.png`: frontend scan output.
+- [ ] Trivy screenshots come from the successful SHA-matched Actions run and visibly identify which image was scanned.
 - [ ] Workflow source visibly contains `HIGH,CRITICAL` and failing exit code.
 - [ ] Save a 2–3 sentence explanation of what was scanned and either one CVE/remediation or the meaning of a clean scan.
 
