@@ -130,11 +130,11 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Status:** Accepted
 
-**Decision:** Pytest overrides database dependencies and uses an isolated test database/transaction strategy.
+**Decision:** Pytest forces a dedicated `incidentops_test` PostgreSQL URL before importing the application, applies the real Alembic migration, overrides the database dependency, and truncates only test tables before and after each test. API tests use `httpx.AsyncClient` with in-process ASGI transport.
 
 **Why:** The rubric awards two points for not touching production, and destructive CRUD tests must never risk real data.
 
-**Consequence:** Test startup fails safely if a production-style database URL is accidentally selected.
+**Consequence:** Test startup fails safely unless the database name ends in `_test`. The development `incidentops` database is never used for test rows, and the suite requires the local PostgreSQL service to be available.
 
 ## ADR-013 — PostgreSQL runs in-cluster only for the classroom demonstration
 

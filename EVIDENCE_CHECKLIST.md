@@ -23,10 +23,10 @@
 
 ## Testing — M2
 
-- [ ] `m2-01-pytest.png`: complete `pytest -v` command and passing summary.
-- [ ] Output visibly proves at least five tests; target is ten or more.
+- [ ] `m2-01-pytest.png`: complete `cd backend` / `pytest -v` command and the final passing summary in one readable terminal capture.
+- [ ] Output visibly proves all 16 tests pass with zero failures; the rubric minimum is five.
 - [ ] Tests shown cover at least three different endpoints.
-- [ ] `conftest.py`/configuration proves isolation from production data.
+- [ ] `tests/conftest.py` and terminal/database evidence prove `incidentops_test` isolation from the normal `incidentops` database.
 - [ ] Optional `m2-02-coverage.png`: useful coverage report for portfolio quality.
 
 ## Git and GitHub — M3

@@ -13,18 +13,18 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [x] Create `TODO.md`.
 - [x] Create `EVIDENCE_CHECKLIST.md`.
 - [x] Create `DECISIONS.md`.
-- [ ] User approves the plan before implementation begins.
+- [x] User approves the plan before implementation begins.
 
 ## M1 — Repository scaffold and Git
 
 - [x] Initialize Git on user approval.
-- [ ] Create original root README outline and directory scaffold.
+- [x] Create original root README outline and directory scaffold.
 - [x] Add `.gitignore` entries for `.env`, `__pycache__`, `node_modules`, `.venv`, Terraform state/plan files, kubeconfig, coverage, and IDE files.
 - [x] Add safe `.env.example` files with placeholders only.
-- [ ] Confirm TaskBoard names/content were not copied.
-- [ ] Make focused commits with meaningful messages.
+- [x] Confirm TaskBoard names/content were not copied.
+- [x] Make focused commits with meaningful messages.
 - [ ] Reach at least ten meaningful commits before submission.
-- [ ] Create/connect approved GitHub repository only when authorized.
+- [x] Create/connect approved GitHub repository only when authorized.
 - [ ] Ensure repository is public or instructor access is granted.
 
 ## M2 — Backend and database
@@ -56,14 +56,14 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 
 ## M4 — Tests and quality
 
-- [ ] Configure `pytest.ini` and `conftest.py`.
-- [ ] Guarantee tests cannot use production database configuration.
-- [ ] Test health and readiness behavior.
-- [ ] Test incident create/list/detail/update/delete.
-- [ ] Test invalid severity/status and missing required fields.
-- [ ] Test 404 responses.
-- [ ] Test stats and resolved timestamp behavior.
-- [ ] Reach at least ten meaningful tests across at least three endpoints.
+- [x] Configure `pytest.ini` and `conftest.py`.
+- [x] Guarantee tests cannot use production database configuration.
+- [x] Test health and readiness behavior.
+- [x] Test incident create/list/detail/update/delete.
+- [x] Test invalid severity/status and missing required fields.
+- [x] Test 404 responses.
+- [x] Test stats and resolved timestamp behavior.
+- [x] Reach at least ten meaningful tests across at least three endpoints.
 - [ ] Add frontend lint and production-build checks.
 - [ ] Capture passing `pytest -v` evidence.
 

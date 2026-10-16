@@ -9,11 +9,11 @@ This repository currently contains the application foundation:
 - A FastAPI service with metadata, liveness, database-aware readiness, Swagger, and Prometheus metrics endpoints.
 - SQLAlchemy Service and Incident domain models with controlled lifecycle values and bidirectional relationships.
 - A reviewed Alembic migration verified against the local PostgreSQL 17 development database, including downgrade and re-upgrade.
-- Validated Pydantic create, update, and response schemas ready for the future CRUD API.
+- Validated Pydantic create, update, and response schemas used by the live CRUD API.
 - Database-backed Service and Incident CRUD, incident filters, dashboard statistics, and derived SLA status responses.
 - A responsive React/Vite IncidentOps dashboard shell with clearly marked placeholder data.
 
-Frontend CRUD integration, automated test coverage, full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
+Frontend CRUD integration, full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
 
 ## Stack
 
@@ -91,6 +91,18 @@ Interactive OpenAPI documentation is available at `http://localhost:8000/docs`.
 | `DELETE` | `/api/incidents/{incident_id}` | Delete an incident |
 
 Incident responses derive `sla_target_minutes`, `sla_deadline`, and `sla_status` from severity and timestamps; no redundant SLA columns are stored.
+
+## Backend tests
+
+Start the local PostgreSQL service, then run the complete suite from `backend/`:
+
+```powershell
+docker compose up -d postgres
+Set-Location backend
+.venv\Scripts\python -m pytest -v
+```
+
+On macOS or Linux, use `.venv/bin/python -m pytest -v`. Tests use the dedicated `incidentops_test` PostgreSQL database, apply the real Alembic migration, and clear test rows before and after every test. The normal `incidentops` development database is never used for test data. The suite uses `httpx.AsyncClient` with in-process ASGI transport rather than a live Uvicorn server.
 
 ## Frontend development
 
