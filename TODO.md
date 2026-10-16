@@ -74,7 +74,7 @@ Legend: `[ ]` not proven, `[x]` completed and verified, `[!]` requires explicit 
 - [ ] Create secure Nginx same-origin proxy configuration.
 - [ ] Add frontend/backend `.dockerignore` files.
 - [ ] Define frontend, backend, and PostgreSQL in Compose.
-- [ ] Add health checks and durable local database volume.
+- [x] Add health checks and durable local database volume.
 - [ ] Run `docker compose config` and both image builds.
 - [ ] Prove runtime UIDs are non-root.
 - [ ] Prove `docker compose up --build` makes all services healthy.

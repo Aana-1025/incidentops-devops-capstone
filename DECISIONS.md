@@ -176,6 +176,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Consequence:** Future service logic calculates SLA risk from severity, creation time, current time, and resolution time. If policy later varies by service or customer, it can become a dedicated policy model through a reviewed migration.
 
+## ADR-017 — Separate host and container PostgreSQL addresses
+
+**Status:** Accepted
+
+**Decision:** Publish the local Compose PostgreSQL service as `localhost:5433` while retaining PostgreSQL's standard container port `5432`. Host-run backend processes use `localhost:5433`; future Compose backend containers use the service address `postgres:5432`.
+
+**Why:** Host port `5432` is already owned by an unrelated PostgreSQL process that must remain untouched. Docker service discovery removes the need for containers to use the published host port.
+
+**Consequence:** Development documentation and example configuration must clearly distinguish host execution from container execution. The Compose database remains PostgreSQL-compatible without changing its internal listener.
+
 ## Decisions requiring later user review
 
 - **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.

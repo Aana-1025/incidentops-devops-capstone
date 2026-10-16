@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     app_name: str = "IncidentOps API"
     app_env: str = "development"
     database_url: str = (
-        "postgresql+psycopg://incidentops:incidentops@localhost:5432/incidentops"
+        "postgresql+psycopg://incidentops:incidentops@localhost:5433/incidentops"
     )
     database_connect_timeout_seconds: int = 3
 

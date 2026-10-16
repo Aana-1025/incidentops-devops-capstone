@@ -8,11 +8,11 @@ This repository currently contains the application foundation:
 
 - A FastAPI service with metadata, liveness, database-aware readiness, Swagger, and Prometheus metrics endpoints.
 - SQLAlchemy Service and Incident domain models with controlled lifecycle values and bidirectional relationships.
-- A reviewed Alembic migration that creates the PostgreSQL domain schema; it has not yet been applied to a live PostgreSQL instance.
+- A reviewed Alembic migration verified against the local PostgreSQL 17 development database, including downgrade and re-upgrade.
 - Validated Pydantic create, update, and response schemas ready for the future CRUD API.
 - A responsive React/Vite IncidentOps dashboard shell with clearly marked placeholder data.
 
-Incident and service CRUD, live PostgreSQL migration verification, automated test coverage, Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
+Incident and service CRUD, automated test coverage, full-stack Docker integration, CI/CD, Kubernetes, monitoring servers, and AWS infrastructure are planned but are **not yet implemented**.
 
 ## Stack
 
@@ -21,6 +21,33 @@ Incident and service CRUD, live PostgreSQL migration verification, automated tes
 - **Database:** PostgreSQL
 - **Observability foundation:** Prometheus-compatible `/metrics`
 
+## Local PostgreSQL
+
+Docker Compose runs only the development database in the current milestone. PostgreSQL listens on its normal container port `5432` and is published as `localhost:5433` to avoid conflicting with an existing host database.
+
+```powershell
+docker compose up -d postgres
+docker compose ps
+Set-Location backend
+.venv\Scripts\python -m alembic upgrade head
+```
+
+On macOS or Linux, replace `.venv\Scripts\python` with `.venv/bin/python`. The host-run backend uses:
+
+```text
+postgresql+psycopg://incidentops:incidentops@localhost:5433/incidentops
+```
+
+When the backend is containerized later, it will use Docker networking and connect to `postgres:5432`, not `localhost:5433`.
+
+Stop the database without deleting its persistent volume:
+
+```powershell
+docker compose stop postgres
+```
+
+> **Destructive reset:** `docker compose down --volumes` permanently deletes the local IncidentOps database volume. Do not use it during normal development.
+
 ## Backend development
 
 Python 3.12 is the target runtime. From the repository root on Windows PowerShell:
@@ -28,7 +55,9 @@ Python 3.12 is the target runtime. From the repository root on Windows PowerShel
 ```powershell
 python -m venv backend/.venv
 backend\.venv\Scripts\python -m pip install -r backend\requirements.txt
+docker compose up -d postgres
 Set-Location backend
+.venv\Scripts\python -m alembic upgrade head
 .venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
 ```
 
@@ -40,7 +69,7 @@ Open:
 - Swagger: `http://localhost:8000/docs`
 - Metrics: `http://localhost:8000/metrics`
 
-Copy `backend/.env.example` to an untracked `backend/.env` only when local PostgreSQL is available. `/ready` correctly returns HTTP 503 while the configured database is unavailable.
+The checked-in local default connects to the Compose database on `localhost:5433`. Copy `backend/.env.example` to an untracked `backend/.env` only when you need local overrides. `/ready` returns HTTP 200 only while it can query PostgreSQL; otherwise it returns HTTP 503.
 
 ## Frontend development
 
@@ -52,6 +81,6 @@ npm run dev
 
 The Vite development server runs at `http://localhost:3000`. Run `npm run lint` and `npm run build` before committing frontend changes.
 
-## Planned local integration
+## Planned full-stack integration
 
-PostgreSQL and full-stack startup will be added with Docker Compose in a later milestone. Until then, frontend placeholder metrics are intentional and the backend must be started separately.
+PostgreSQL is now available through Docker Compose. Backend and frontend containers will be added in a later milestone; until then, frontend placeholder metrics are intentional and both applications run directly on the host.
