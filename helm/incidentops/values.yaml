@@ -5,7 +5,7 @@ backend:
   replicaCount: 2
   image:
     repository: ghcr.io/aana-1025/incidentops-backend
-    tag: e220ba4854b510e4d3e6bd1e99b7e11df5d8a5aa
+    tag: 85b40da4d8bde943610e3e587a58028761151e18
     pullPolicy: IfNotPresent
   service:
     port: 8000
@@ -38,7 +38,7 @@ frontend:
   replicaCount: 2
   image:
     repository: ghcr.io/aana-1025/incidentops-frontend
-    tag: e220ba4854b510e4d3e6bd1e99b7e11df5d8a5aa
+    tag: 85b40da4d8bde943610e3e587a58028761151e18
     pullPolicy: IfNotPresent
   service:
     port: 8080

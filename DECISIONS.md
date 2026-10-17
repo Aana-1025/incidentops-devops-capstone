@@ -174,13 +174,13 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Why:** Severity and timestamps are the source facts needed to calculate SLA risk. A stored derived value could become stale when severity changes and would add migration and synchronization complexity without improving this capstone milestone.
 
-**Consequence:** Future service logic calculates SLA risk from severity, creation time, current time, and resolution time. If policy later varies by service or customer, it can become a dedicated policy model through a reviewed migration.
+**Consequence:** The implemented service logic calculates SLA risk from severity, creation time, current time, and resolution time. If policy later varies by service or customer, it can become a dedicated policy model through a reviewed migration.
 
 ## ADR-017 — Separate host and container PostgreSQL addresses
 
 **Status:** Accepted
 
-**Decision:** Publish the local Compose PostgreSQL service as `localhost:5433` while retaining PostgreSQL's standard container port `5432`. Host-run backend processes use `localhost:5433`; future Compose backend containers use the service address `postgres:5432`.
+**Decision:** Publish the local Compose PostgreSQL service as `localhost:5433` while retaining PostgreSQL's standard container port `5432`. Host-run backend processes use `localhost:5433`; Compose backend containers use the service address `postgres:5432`.
 
 **Why:** Host port `5432` is already owned by an unrelated PostgreSQL process that must remain untouched. Docker service discovery removes the need for containers to use the published host port.
 
@@ -224,7 +224,7 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Why:** This order makes the registry a collection of traceable release candidates rather than unverified build output, while meeting the grading requirements without a personal access token.
 
-**Consequence:** Pull requests execute tests, builds, and scans but never publish. Kubernetes deployment remains a separate later milestone, and no `latest` tag is produced.
+**Consequence:** Pull requests execute tests, builds, and scans but never publish. Successful `main` runs publish both full-SHA image tags. Kubernetes deployment is a separate controlled Helm operation, and no `latest` tag is produced.
 
 ## ADR-022 — Run one revision-scoped migration Job before application startup
 
@@ -244,22 +244,24 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 
 **Why:** HPA needs real resource metrics, while explicit discovery labels and provisioned dashboards make the observability proof reproducible without monitoring unrelated workloads or relying on manual UI configuration. Docker Desktop alone requires Metrics Server's kubelet insecure-TLS compatibility argument.
 
-**Consequence:** The backend scales between two and five replicas at a 50% CPU target. Monitoring credentials stay in the generated Kubernetes Secret and never enter Git. The local stack disables unrelated exporters and alerting to reduce resource use; cloud monitoring sizing and TLS must be reviewed separately before AWS deployment.
+**Consequence:** The backend scales between two and five replicas at a 50% CPU target. Monitoring credentials stay in the generated Kubernetes Secret and never enter Git. The verified local stack disabled unrelated exporters and alerting to reduce resource use. Prometheus and Grafana evidence was captured locally; the timeboxed AWS run focused on the application and storage path rather than adding unnecessary monitoring load.
 
 ## ADR-024 — Use a public-subnet, timeboxed EKS demo architecture
 
 **Status:** Accepted
 
-**Decision:** Define one dedicated VPC with two dynamically selected Availability Zones, two public subnets, an Internet Gateway, and one conservative EKS managed node group. Do not create private subnets or a NAT Gateway for the short-lived academic evidence window. Require an explicit trusted `/32` CIDR for the public EKS API and select standard Kubernetes support.
+**Decision:** Define one dedicated VPC in `ap-south-1` with two dynamically selected Availability Zones, two public subnets, an Internet Gateway, and one conservative EKS managed node group. Do not create private subnets or a NAT Gateway for the short-lived academic evidence window. Restrict the public EKS API to an explicit trusted `/32` CIDR and enable private endpoint access for reliable worker registration.
 
-**Why:** The rubric requires a VPC, two public subnets, EKS, and a worker group. Direct Internet Gateway routing avoids the hourly and data-processing cost of NAT while a restricted control-plane CIDR avoids making the Kubernetes API universally reachable. A nullable Kubernetes version lets EKS select its current default instead of aging a hardcoded version into paid extended support.
+**Why:** The rubric requires a VPC, two public subnets, EKS, and a worker group. Direct Internet Gateway routing avoids the hourly and data-processing cost of NAT while a restricted control-plane CIDR avoids making the Kubernetes API universally reachable. Private endpoint access was added after the first node registration attempt showed that workers also needed a reliable in-VPC control-plane path.
 
-**Consequence:** This is not a production network reference. Future apply creates chargeable EKS, EC2, EBS, and public IPv4 resources and therefore requires explicit approval, a current price/quota review, a prepared evidence checklist, and same-session destroy. The EBS CSI add-on uses Pod Identity and its scoped AWS-managed policy so the in-cluster PostgreSQL PVC can be provisioned without assigning storage permissions to application pods.
+**Consequence:** This is not a production network reference. The verified evidence run used EKS 1.36, one on-demand `t3.medium` worker target, 20 GiB node storage, and node scaling of 1/1/2. The EBS CSI add-on used Pod Identity and its scoped AWS-managed policy so PostgreSQL could receive a PVC without storage permissions on application pods. No NAT Gateway, RDS, or AWS Load Balancer was created. After the application evidence was captured, Terraform completed 0 add, 0 change, and 21 destroy; the state list was empty afterward.
 
-## Decisions requiring later user review
+## Resolved delivery decisions
 
-- **AWS account and approved region:** Proposed default is the lowest-risk region compatible with the teacher's expectations; `ap-south-1` is not assumed until current cost/quota support is checked.
-- **Local Kubernetes:** Docker Desktop Kubernetes or kind, based on what is installed and reliable on the user's machine.
-- **AWS Ingress implementation:** NGINX plus a Service LoadBalancer versus AWS Load Balancer Controller; select after current cost and setup complexity are compared.
-- **Repository visibility:** Public is simplest for grading; a private repository requires confirmed instructor access and may affect package visibility.
-- **License and personal branding:** add only after the user supplies the preferred name/identity.
+- **AWS region:** The evidence environment ran in `ap-south-1` after support, quota, and cost checks.
+- **Local Kubernetes:** Docker Desktop Kubernetes was used for Helm, Ingress, HPA, monitoring, and troubleshooting verification.
+- **Ingress:** NGINX Ingress was used locally and on EKS. Access for the evidence session did not require an AWS Load Balancer.
+- **Repository visibility:** The repository and GHCR packages are intended to remain public for grading.
+- **Image identity:** The verified Helm baseline uses an immutable full commit SHA. The final M10 demonstration will override both image tags with its own newly published SHA.
+- **Cloud lifecycle:** The Terraform-managed AWS environment was created only for the evidence window and was then destroyed successfully. The separately created bootstrap identity and administrative role were deliberately outside Terraform's resource scope.
+- **License and personal branding:** These remain optional presentation choices and do not affect the technical architecture.

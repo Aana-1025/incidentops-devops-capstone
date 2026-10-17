@@ -1,284 +1,204 @@
 # IncidentOps
 
-IncidentOps is a cloud incident and service reliability management platform being built as a university DevOps capstone. The project will provide an operational dashboard for services and production incidents while demonstrating a complete, observable delivery path from local development to Kubernetes on AWS EKS.
+I built IncidentOps as my university DevOps capstone project. It is an incident and service reliability management platform where I can register services, report incidents, track their severity and lifecycle, and see operational statistics and SLA risk in one dashboard.
 
-## Current status
+The application is intentionally small enough to understand end to end, but the delivery path is complete: automated tests, non-root containers, GitHub Actions, Trivy, GHCR, Terraform, AWS EKS, Kubernetes, Helm, autoscaling, Prometheus, Grafana, and troubleshooting exercises.
 
-This repository currently contains the application foundation:
+## What the application does
 
-- A FastAPI service with metadata, liveness, database-aware readiness, Swagger, and Prometheus metrics endpoints.
-- SQLAlchemy Service and Incident domain models with controlled lifecycle values and bidirectional relationships.
-- A reviewed Alembic migration verified against the local PostgreSQL 17 development database, including downgrade and re-upgrade.
-- Validated Pydantic create, update, and response schemas used by the live CRUD API.
-- Database-backed Service and Incident CRUD, incident filters, dashboard statistics, and derived SLA status responses.
-- A responsive React/Vite operations dashboard connected to the live API, with incident and service CRUD, API-backed filters, KPI statistics, lifecycle controls, and derived SLA status.
-- A three-service Docker Compose stack with unprivileged backend and frontend runtimes, automated migrations, health checks, and an Nginx same-origin API proxy.
-- A locally verified Kubernetes/Helm release with NGINX Ingress, CPU autoscaling, Prometheus scraping, and a provisioned Grafana dashboard.
+- Creates, lists, updates, filters, and deletes monitored services and incidents.
+- Tracks incident severity, status, assignee, timestamps, and affected service.
+- Supports the Open, Acknowledged, Investigating, and Resolved lifecycle.
+- Calculates SLA deadlines and risk from incident severity and age.
+- Shows database-derived dashboard statistics and clear loading, empty, validation, and error states.
+- Exposes Swagger documentation, liveness, database-aware readiness, and Prometheus metrics.
 
-CI/CD, local Kubernetes, and application observability are implemented. Terraform/AWS and the isolated troubleshooting exercises remain planned.
+## Architecture
 
-## Stack
+```mermaid
+flowchart LR
+    Browser[React dashboard] -->|same-origin /api| Nginx[Nginx frontend]
+    Nginx --> FastAPI[FastAPI backend]
+    FastAPI --> PostgreSQL[(PostgreSQL)]
+    FastAPI --> Metrics[/metrics]
+    Metrics --> Prometheus
+    Prometheus --> Grafana
 
-- **Frontend:** React, Vite, responsive CSS
-- **Backend:** Python, FastAPI, SQLAlchemy, Alembic
-- **Database:** PostgreSQL
-- **Observability foundation:** Prometheus-compatible `/metrics`
-
-## Run with Docker Compose
-
-Build and start the complete application from the repository root:
-
-```powershell
-docker compose up --build
+    GitHub[GitHub push] --> Actions[GitHub Actions]
+    Actions --> Tests[Pytest + lint + build]
+    Tests --> Trivy[Trivy gate]
+    Trivy --> GHCR[SHA-tagged images]
+    GHCR --> Helm[Controlled Helm deployment]
 ```
 
-The stack applies Alembic migrations before starting the API. Open:
+I kept `/health` and `/ready` separate because a process can be alive while its database dependency is unavailable. Kubernetes uses `/health` for liveness and `/ready` before routing traffic.
 
-- Dashboard: `http://localhost:3000`
-- Swagger: `http://localhost:8000/docs`
-- Liveness: `http://localhost:8000/health`
-- Database readiness: `http://localhost:8000/ready`
-- Metrics: `http://localhost:8000/metrics`
+## Technology stack
 
-Inside Docker, the backend reaches PostgreSQL at `postgres:5432`; the browser sends relative `/api` requests to Nginx, which proxies them to `backend:8000`.
+| Area | Technology |
+|---|---|
+| Frontend | React 19, Vite, responsive CSS, Nginx |
+| Backend | Python 3.12, FastAPI, Pydantic, SQLAlchemy, Alembic |
+| Database | PostgreSQL 17 |
+| Testing | Pytest, HTTPX, isolated PostgreSQL test database |
+| Containers | Docker, Docker Compose, non-root runtime users |
+| CI/CD | GitHub Actions, GHCR, immutable Git SHA tags |
+| Security | Trivy HIGH/CRITICAL image gate |
+| Infrastructure | Terraform, AWS VPC, Amazon EKS |
+| Platform | Kubernetes, Helm, NGINX Ingress, HPA |
+| Observability | Prometheus, Grafana, ServiceMonitor |
 
-Stop the stack while preserving the named PostgreSQL volume:
-
-```powershell
-docker compose down
-```
-
-> **Destructive reset:** `docker compose down -v` removes the IncidentOps PostgreSQL volume and all local application data. Do not use it during normal development.
-
-## Local PostgreSQL and host development
-
-For host-run backend development, PostgreSQL listens on its normal container port `5432` and is published as `localhost:5433` to avoid conflicting with an existing host database.
-
-```powershell
-docker compose up -d postgres
-docker compose ps
-Set-Location backend
-.venv\Scripts\python -m alembic upgrade head
-```
-
-On macOS or Linux, replace `.venv\Scripts\python` with `.venv/bin/python`. The host-run backend uses:
+## Repository structure
 
 ```text
-postgresql+psycopg://incidentops:incidentops@localhost:5433/incidentops
+IncidentOps/
+├── .github/workflows/ci-cd.yml
+├── backend/                    # FastAPI, models, migrations, and tests
+├── frontend/                   # React/Vite application and Nginx config
+├── evidence/                   # Curated M1-M10 grading evidence
+├── helm/incidentops/           # Complete application Helm chart
+├── k8s/namespace.yaml
+├── monitoring/                 # Prometheus/Grafana Helm values
+├── terraform/                  # VPC, EKS, IAM, and EBS CSI infrastructure
+├── troubleshooting/           # Isolated failure exercises and runbook
+└── docker-compose.yml
 ```
 
-The Compose backend instead uses Docker networking and connects to `postgres:5432`, not `localhost:5433`.
+## Run locally with Docker Compose
 
-Stop the database without deleting its persistent volume:
+Prerequisites are Docker Desktop and Docker Compose. From the repository root:
 
 ```powershell
-docker compose stop postgres
+docker compose up --build -d
+docker compose ps
 ```
 
-## Backend development
-
-Python 3.12 is the target runtime. From the repository root on Windows PowerShell:
-
-```powershell
-python -m venv backend/.venv
-backend\.venv\Scripts\python -m pip install -r backend\requirements.txt
-docker compose up -d postgres
-Set-Location backend
-.venv\Scripts\python -m alembic upgrade head
-.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
-```
-
-Open:
-
-- API metadata: `http://localhost:8000/`
-- Liveness: `http://localhost:8000/health`
-- Database readiness: `http://localhost:8000/ready`
-- Swagger: `http://localhost:8000/docs`
-- Metrics: `http://localhost:8000/metrics`
-
-The checked-in local default connects to the Compose database on `localhost:5433`. Copy `backend/.env.example` to an untracked `backend/.env` only when you need local overrides. `/ready` returns HTTP 200 only while it can query PostgreSQL; otherwise it returns HTTP 503.
-
-## API endpoints
-
-Interactive OpenAPI documentation is available at `http://localhost:8000/docs`.
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET` | `/api/services` | List services in deterministic name order |
-| `GET` | `/api/services/{service_id}` | Get one service |
-| `POST` | `/api/services` | Create a service |
-| `PUT` | `/api/services/{service_id}` | Update supplied service fields |
-| `DELETE` | `/api/services/{service_id}` | Delete a service without incident history |
-| `GET` | `/api/incidents` | List/filter incidents by status, severity, service, or assignee |
-| `GET` | `/api/incidents/stats` | Return database-derived dashboard counts |
-| `GET` | `/api/incidents/{incident_id}` | Get an incident with service and SLA information |
-| `POST` | `/api/incidents` | Declare an incident for an existing service |
-| `PUT` | `/api/incidents/{incident_id}` | Update lifecycle and incident details |
-| `DELETE` | `/api/incidents/{incident_id}` | Delete an incident |
-
-Incident responses derive `sla_target_minutes`, `sla_deadline`, and `sla_status` from severity and timestamps; no redundant SLA columns are stored.
-
-## Backend tests
-
-Start the local PostgreSQL service, then run the complete suite from `backend/`:
-
-```powershell
-docker compose up -d postgres
-Set-Location backend
-.venv\Scripts\python -m pytest -v
-```
-
-On macOS or Linux, use `.venv/bin/python -m pytest -v`. Tests use the dedicated `incidentops_test` PostgreSQL database, apply the real Alembic migration, and clear test rows before and after every test. The normal `incidentops` development database is never used for test data. The suite uses `httpx.AsyncClient` with in-process ASGI transport rather than a live Uvicorn server.
-
-## Frontend development
-
-Start PostgreSQL and the backend first. In a second PowerShell terminal, run:
-
-```powershell
-Set-Location frontend
-npm install
-npm run dev
-```
-
-Open `http://localhost:3000`. Vite proxies browser requests from `/api` to the host-run FastAPI server at `http://127.0.0.1:8000`, so no browser-specific backend URL is embedded in the application.
-
-The complete local startup order is:
-
-1. `docker compose up -d postgres`
-2. From `backend/`, run `.venv\Scripts\python -m alembic upgrade head` and then `.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000`.
-3. From `frontend/`, run `npm run dev`.
+The stack starts PostgreSQL, applies the Alembic migration before the API starts, waits for backend readiness, and then starts the frontend.
 
 Useful URLs:
 
 - Dashboard: `http://localhost:3000`
-- Backend readiness: `http://localhost:8000/ready`
-- Swagger API documentation: `http://localhost:8000/docs`
-- Prometheus metrics: `http://localhost:8000/metrics`
+- Swagger: `http://localhost:8000/docs`
+- Liveness: `http://localhost:8000/health`
+- Readiness: `http://localhost:8000/ready`
+- Metrics: `http://localhost:8000/metrics`
 
-Validate frontend changes with `npm run lint` and `npm run build`.
+Stop the stack with `docker compose down`. The named PostgreSQL volume is retained unless it is explicitly removed.
 
-## CI/CD and container security
+## API and database
 
-Every push to `main` and every pull request targeting `main` runs the `IncidentOps CI/CD` GitHub Actions workflow. The quality job provisions an ephemeral PostgreSQL 17 service, runs all backend tests against the isolated `incidentops_test` database, then runs frontend lint and the production build.
+The main REST collections are `/api/services` and `/api/incidents`. Both support GET, POST, PUT, and DELETE operations; incidents also support filters and `/api/incidents/stats`.
 
-After quality checks pass, the pipeline builds both runtime images and scans their operating-system and application packages with Trivy. Any known `HIGH` or `CRITICAL` vulnerability fails the job. Only successful scans permit a `main` push to publish these immutable images through the built-in `GITHUB_TOKEN`:
+SQLAlchemy owns the runtime models and Alembic owns schema changes. The initial migration creates the `services` and `incidents` tables, indexes incident status/severity/service, and enforces the service foreign key. PostgreSQL is published as `localhost:5433` for host development because port 5432 belongs to an unrelated local process. Containers use Docker DNS at `postgres:5432`.
+
+## Testing
+
+The backend contains 16 Pytest tests covering health, readiness, service CRUD, incident CRUD, validation, missing records, service linkage, resolution timestamps, statistics, and SLA calculations.
+
+```powershell
+docker compose up -d postgres
+cd backend
+.venv\Scripts\python -m pytest -v
+```
+
+Tests are protected from the development database: the configured database name must end in `_test`, the real Alembic chain is applied to it, and rows are cleared before and after each test.
+
+## Docker design
+
+The backend image runs as UID/GID `10001`, and the frontend uses a Node build stage followed by the unprivileged Nginx runtime as UID/GID `101`. I used a multi-stage frontend build so Node and development dependencies are not included in the runtime image. Running both application containers as non-root reduces the impact of a container compromise.
+
+Compose health checks verify PostgreSQL, database-aware backend readiness, and frontend HTTP availability instead of checking only whether a process started.
+
+## CI/CD, GHCR, and Trivy
+
+Every push to `main` and pull request targeting `main` runs the GitHub Actions pipeline. The quality job starts an ephemeral PostgreSQL service, runs all backend tests, then runs frontend lint and the production build. A second job builds both images, scans them, and publishes only successful `main` builds.
+
+![Successful IncidentOps GitHub Actions runs](evidence/M5-cicd/m5-01-actions-green.png)
+
+Published images use the full commit SHA:
 
 ```text
 ghcr.io/aana-1025/incidentops-backend:<full-git-sha>
 ghcr.io/aana-1025/incidentops-frontend:<full-git-sha>
 ```
 
-The workflow does not publish a `latest` tag and does not deploy to Kubernetes. Package visibility is managed in GitHub Container Registry.
+I chose immutable SHA tags instead of `latest` so a deployed container can always be traced to the source commit that built it. Trivy scans operating-system and language packages in both runtime images. A known `HIGH` or `CRITICAL` vulnerability returns a failing exit code, so an unsafe image is not published silently. The captured final scans were clean at those blocking severities.
 
-Trivy inspects the operating-system and language-package contents of both runtime images for known `HIGH` and `CRITICAL` CVEs. The initial preflight found unfixed Debian base-image findings plus three fixable Alpine packages in the frontend; moving the backend to the current official Python Alpine image and upgrading the frontend runtime packages produced clean blocking scans without suppressing findings.
+## Terraform and the completed AWS evidence run
 
-## Terraform infrastructure
+Terraform defines a dedicated `10.0.0.0/16` VPC, two public subnets in separate Availability Zones, an Internet Gateway and route table, EKS IAM roles, one managed node group, the EKS Pod Identity Agent, and EBS CSI support. I avoided NAT Gateway and RDS because they were not required for the academic workload and would add unnecessary hourly cost. The EKS public endpoint was restricted to the operator's current `/32`; private endpoint access was also enabled for reliable worker registration.
 
-The direct-resource Terraform module in `terraform/` defines the eventual short-lived AWS demo environment: one tagged VPC, two public subnets selected across available Availability Zones, an Internet Gateway and public route table, least-purpose EKS roles, one managed node group, and EBS CSI storage support through EKS Pod Identity. The defaults target `ap-south-1`, one `t3.medium` worker, and a 20 GiB node disk. Region, CIDRs, names, Kubernetes version, instance types, and scaling remain configurable.
+The AWS evidence session was genuinely completed in `ap-south-1`:
 
-Only offline initialization and validation have been completed. No AWS plan was produced and no resource was created. See `terraform/README.md` for the architecture, required `/32` API-access input, cost audit, validation commands, future paid-resource list, and same-session cleanup procedure.
+- The initial Terraform plan was **21 to add, 0 to change, 0 to destroy**.
+- The VPC, two public subnets, EKS 1.36 cluster, managed node group, and one `t3.medium` worker were created.
+- EKS and the node group became Active, and the worker became Ready.
+- EBS CSI and Pod Identity were configured.
+- IncidentOps was deployed with Helm; Ingress, the API, and the PostgreSQL PVC worked.
+- Screenshots and video were captured before cleanup.
+- Application Kubernetes resources were removed, followed by Terraform-managed infrastructure.
+- Final destroy output was **0 added, 0 changed, 21 destroyed**.
+- `terraform state list` was empty after cleanup.
 
-```powershell
-terraform -chdir=terraform fmt -check -recursive
-terraform -chdir=terraform init -backend=false
-terraform -chdir=terraform validate
-```
+No project AWS application or EKS environment is running now. The original Terraform state/backups remain local and Git-ignored as historical operational records.
 
-`terraform apply` and `terraform destroy` are prohibited until the user explicitly approves the paid AWS evidence session. The design contains no NAT Gateway, RDS, Route 53 hosted zone, Elastic IP, cache, or standalone load balancer.
+See [terraform/README.md](terraform/README.md) for architecture, safe reproduction steps, cost warnings, and the verified run summary.
 
 ## Kubernetes and Helm
 
-The chart in `helm/incidentops/` deploys two frontend replicas, two backend replicas, one PostgreSQL StatefulSet, and a persistent 1 GiB database volume in the `incidentops` namespace. ClusterIP Services keep workloads internal, while a configurable Ingress sends `/` to the frontend and `/api` to the backend. The chart defaults to the verified immutable GHCR tag recorded in `values.yaml`; it never relies on `latest`.
-
-Each application workload has lightweight CPU/memory requests and limits. Backend liveness uses `/health`, backend readiness uses the database-aware `/ready`, and frontend probes request `/`. A revision-scoped migration Job waits for PostgreSQL and runs `alembic upgrade head` once per Helm release; backend init containers wait for the database to reach the Alembic head before Uvicorn starts, avoiding migrations racing across replicas.
-
-Prerequisites are a working Kubernetes context, `kubectl`, Helm, and an Ingress controller. For Docker Desktop Kubernetes, install the free NGINX controller without binding a host LoadBalancer port:
+The Helm chart deploys two frontend replicas, two backend replicas, one PostgreSQL StatefulSet, ClusterIP Services, a migration Job, Ingress, a backend HPA, and a ServiceMonitor. I used Helm so configuration, upgrades, and rollbacks are reproducible rather than a sequence of manual Kubernetes edits.
 
 ```powershell
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx `
-  --namespace ingress-nginx --create-namespace `
-  --set controller.service.type=NodePort --wait
-```
-
-Validate and install IncidentOps:
-
-```powershell
-kubectl apply --dry-run=client -f .\k8s\namespace.yaml
 helm lint .\helm\incidentops -f .\helm\incidentops\values-local.yaml
 helm template incidentops .\helm\incidentops -n incidentops `
   -f .\helm\incidentops\values-local.yaml
-kubectl apply -f .\k8s\namespace.yaml
-helm upgrade --install incidentops .\helm\incidentops `
-  --namespace incidentops --create-namespace `
-  -f .\helm\incidentops\values-local.yaml `
-  --wait --wait-for-jobs --timeout 5m
 ```
 
-The local chart configuration uses the hostless `nginx` Ingress class and a clearly development-only database password. Supply a secure value outside Git for any non-local environment. To exercise the Ingress locally without editing the hosts file:
+NGINX Ingress routes `/` to the frontend and `/api` to the backend. The frontend then keeps browser API calls same-origin.
 
-```powershell
-kubectl port-forward -n ingress-nginx service/ingress-nginx-controller 8088:80
-```
-
-Open `http://127.0.0.1:8088`; API calls remain same-origin under `/api`. Verify the release with:
-
-```powershell
-kubectl get pods,deployments,svc,ingress,pvc -n incidentops
-helm list -n incidentops
-kubectl port-forward -n incidentops service/incidentops-backend 18000:8000
-```
-
-The direct backend forward exposes `/health` and `/ready` at `http://127.0.0.1:18000`. A normal PostgreSQL pod restart preserves data on the PVC. When the local data is no longer needed, uninstall with `helm uninstall incidentops -n incidentops`; this removes the release-owned PVC and its data.
+PostgreSQL uses a 1 GiB `ReadWriteOnce` PVC. Its `PGDATA` points to a subdirectory so dynamically provisioned filesystems containing `lost+found` work correctly. A revision-scoped Helm migration Job runs `alembic upgrade head` once, while backend init containers wait for the database schema to reach the Alembic head.
 
 ## Autoscaling and observability
 
-The backend HPA maintains 2–5 replicas and targets 50% average CPU utilization. It depends on Metrics Server; Docker Desktop requires the local-only kubelet TLS compatibility flag shown below. The PostgreSQL container and Service continue to use port `5432` inside Kubernetes.
+The backend HPA starts at two replicas, scales to five, and targets 50% CPU utilization. CPU requests are defined because Kubernetes needs them to calculate utilization, and Metrics Server supplies the resource metrics. During local verification, controlled load scaled the backend from 2 to 4 and then 5 replicas.
 
-```powershell
-helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm upgrade --install metrics-server metrics-server/metrics-server `
-  --namespace kube-system --version 3.14.0 `
-  --set 'args[0]=--kubelet-insecure-tls' --wait --timeout 5m
-kubectl top nodes
-kubectl get hpa incidentops-backend -n incidentops --watch
-```
+Prometheus discovers the backend through a ServiceMonitor and scrapes `/metrics`. Grafana is provisioned from source-controlled values with request-rate, p95-latency, and server-error panels.
 
-`monitoring/kube-prometheus-stack-values.yaml` installs a lightweight, local-only Prometheus and Grafana stack. Prometheus explicitly selects the IncidentOps namespace and the chart-managed ServiceMonitor; Grafana provisions the `IncidentOps Observability` dashboard from source with request-rate, p95-latency, and 5xx-rate panels. No Grafana credential is committed.
+![IncidentOps Grafana dashboard](evidence/M9-observability/m9-03-grafana-dashboard.png)
 
-```powershell
-helm upgrade --install kube-prometheus-stack `
-  prometheus-community/kube-prometheus-stack `
-  --namespace monitoring --create-namespace --version 92.10.0 `
-  -f .\monitoring\kube-prometheus-stack-values.yaml `
-  --wait --timeout 10m
-kubectl get pods -n monitoring
-kubectl get servicemonitor -n incidentops
-kubectl port-forward -n monitoring service/kube-prometheus-stack-prometheus 9090:9090
-kubectl port-forward -n monitoring service/kube-prometheus-stack-grafana 3001:80
-```
+The evidence shows both backend Prometheus targets UP and populated request-rate and p95-latency panels.
 
-Open Prometheus at `http://127.0.0.1:9090/targets` and confirm `incidentops-backend` is `UP`. Useful queries are `sum(rate(http_requests_total[1m]))`, p95 over `http_request_duration_seconds_bucket`, and the `5..` status rate. Open Grafana at `http://127.0.0.1:3001`; retrieve its generated local admin password directly from the Kubernetes Secret only when needed, and never copy it into files or evidence.
+## Troubleshooting exercises
 
-For a controlled HPA demonstration, create a temporary namespaced load Deployment, watch CPU and replicas, and delete that exact Deployment immediately afterward. Keep the load modest for the available local CPU and confirm the application stays ready:
+The `troubleshooting/` directory contains isolated exercises that do not modify the Helm-managed application:
 
-```powershell
-kubectl create deployment incidentops-load -n incidentops `
-  --image=curlimages/curl:8.23.0 -- /bin/sh -c `
-  "while true; do curl -s -o /dev/null http://incidentops-backend:8000/health; done"
-kubectl scale deployment incidentops-load -n incidentops --replicas=4
-kubectl get hpa incidentops-backend -n incidentops --watch
-kubectl delete deployment incidentops-load -n incidentops
-```
+1. A nonexistent image tag produces `ImagePullBackOff`; Pod status, descriptions, and events identify the cause.
+2. A Service forwards to the wrong target port; the Pod is healthy but the Service request fails until `targetPort` is corrected.
 
-## Kubernetes troubleshooting demonstrations
+The [runbook](troubleshooting/RUNBOOK.md) records diagnosis, recovery, and cleanup commands. Both failures were reproduced, diagnosed, and recovered during verification.
 
-The isolated exercises in `troubleshooting/` reproduce two grading scenarios without modifying the Helm release:
+## Security and cost controls
 
-- a Deployment with a nonexistent image tag that reaches `ImagePullBackOff`, then recovers after receiving the live immutable backend image;
-- a healthy demo Pod behind a Service that incorrectly forwards to port `9999`, then returns HTTP 200 after `targetPort` is corrected to `8080`.
+- Real credentials, `.env`, kubeconfig, Terraform state, plans, and local tfvars are ignored.
+- GitHub Actions uses the repository token with read-only defaults and grants package write access only to the publishing job.
+- Containers run as non-root users.
+- Images are promoted only after tests, builds, and Trivy pass.
+- The Kubernetes API was never opened to `0.0.0.0/0`.
+- The AWS design intentionally excluded NAT Gateway, RDS/Aurora, ElastiCache, Elastic IPs, Route 53 zones, and AWS Load Balancers.
+- The paid AWS environment was timeboxed and destroyed after evidence capture.
 
-Follow [the troubleshooting runbook](troubleshooting/RUNBOOK.md) for the failure, diagnosis, recovery, and cleanup commands. Each resource uses dedicated names and labels. Finish by confirming the troubleshooting label selects no resources and that the real backend, frontend, PostgreSQL, HPA, health, readiness, and database counts remain healthy.
+Development database passwords in Compose and default Helm values are classroom-only placeholders, not production credentials.
+
+## Evidence and final status
+
+Detailed evidence is organized by rubric module in [evidence/README.md](evidence/README.md). The external original capture folder is preserved separately; the repository contains only a reviewed curated copy.
+
+Verified status before final M10 recording:
+
+- 16 backend tests pass.
+- Frontend lint and production build pass.
+- Compose starts three healthy services with non-root application containers.
+- GitHub Actions builds, scans, and publishes both SHA-tagged images.
+- Local Kubernetes, Helm, Ingress, PVC, HPA, Prometheus, Grafana, and troubleshooting flows were verified.
+- AWS VPC/EKS deployment and application operation were verified, then all project infrastructure was destroyed successfully.
+- The final M10 change-to-deployment recording is intentionally tracked as the remaining submission step.

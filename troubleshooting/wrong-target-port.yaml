@@ -30,7 +30,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: demo
-          image: ghcr.io/aana-1025/incidentops-backend:e220ba4854b510e4d3e6bd1e99b7e11df5d8a5aa
+          image: ghcr.io/aana-1025/incidentops-backend:85b40da4d8bde943610e3e587a58028761151e18
           imagePullPolicy: IfNotPresent
           command: ["python", "-m", "http.server", "8080", "--directory", "/tmp"]
           ports:

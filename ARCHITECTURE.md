@@ -2,86 +2,65 @@
 
 ## System purpose
 
-IncidentOps is a cloud incident and service reliability management platform. It records affected services and production incidents, tracks severity/status/ownership, highlights SLA risk, and exposes operational telemetry. Its product model and visual identity are intentionally different from the teacher's TaskBoard reference.
+IncidentOps is a modular-monolith incident and service reliability application. It combines a React operations dashboard, a FastAPI REST API, and PostgreSQL with a delivery path through Docker, GitHub Actions, GHCR, Terraform, Kubernetes, Helm, and Prometheus/Grafana.
 
-## Context and delivery flow
+## Delivery and runtime flow
 
 ```mermaid
-flowchart LR
-    User[Operator browser] --> Ingress[Ingress / Nginx]
-    Ingress -->|/| UI[React + Vite frontend]
-    Ingress -->|/api| API[FastAPI backend]
-    UI -->|REST via /api| API
-    API --> DB[(PostgreSQL)]
-    Prom[Prometheus] -->|scrape /metrics| API
-    Grafana -->|query| Prom
-
-    Dev[Developer] --> GitHub[GitHub repository]
+flowchart TB
+    Developer --> GitHub
     GitHub --> Actions[GitHub Actions]
-    Actions -->|test, build, Trivy scan| GHCR[GHCR images tagged by commit SHA]
-    GHCR --> K8s[Kubernetes / AWS EKS]
-    Terraform[Terraform] -->|VPC, subnets, EKS, workers| AWS[AWS]
-    Helm[Helm chart] -->|release| K8s
-    K8s --> Ingress
+    Actions --> Quality[Pytest + frontend lint/build]
+    Quality --> Images[Build backend and frontend images]
+    Images --> Trivy[Trivy HIGH/CRITICAL gate]
+    Trivy --> GHCR[Publish full-SHA tags]
+    GHCR --> Helm[Controlled manual Helm install/upgrade]
+
+    Browser -->|/| Frontend[React + Nginx]
+    Browser -->|/api| Ingress[NGINX Ingress]
+    Ingress --> Frontend
+    Ingress --> Backend[FastAPI]
+    Frontend -->|same-origin /api| Backend
+    Backend --> PostgreSQL[(PostgreSQL)]
+    Prometheus -->|scrape /metrics| Backend
+    Grafana --> Prometheus
 ```
 
-## Runtime request path
-
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant I as Ingress/Nginx
-    participant F as React frontend
-    participant A as FastAPI
-    participant P as PostgreSQL
-    B->>I: GET /
-    I->>F: Static application
-    F-->>B: HTML/CSS/JavaScript
-    B->>I: GET /api/incidents
-    I->>A: Proxy API request
-    A->>P: SQLAlchemy query
-    P-->>A: Incident rows
-    A-->>B: Validated JSON response
-```
+The GitHub Actions workflow deliberately stops after publishing verified images. Kubernetes deployment remains a controlled Helm operation so cluster credentials are not stored in the repository workflow.
 
 ## Application components
 
 ### Frontend
 
-- React with Vite; responsive operations dashboard.
-- Incident table/cards with severity and status filters.
-- Create/edit incident form and lifecycle actions.
-- Services view and dashboard KPI/SLA-risk panels.
+- React and Vite single-page dashboard.
+- Central API client under `frontend/src/services/`.
+- Service and incident CRUD, filters, lifecycle controls, KPI cards, and SLA state.
+- Same-origin `/api` calls in container and Kubernetes environments.
 - Explicit loading, empty, validation, backend-error, and retry states.
-- Browser calls same-origin `/api`; it never embeds a cluster-internal hostname.
-- Production image uses a multi-stage Node build and non-root Nginx runtime.
+- Multi-stage Node build with an unprivileged Nginx runtime on port 8080.
 
-### Backend and API
+### Backend and implemented API
 
-- FastAPI with separated routers, schemas, models, configuration, database, and service logic.
-- SQLAlchemy 2.x ORM and Alembic-only schema evolution.
-- Pydantic validation constrains severity/status and rejects invalid input.
-- `/health` proves the process is alive; `/ready` proves database connectivity; `/metrics` exports Prometheus data; `/docs` exposes Swagger.
-- Structured logs go to stdout/stderr for Docker and Kubernetes collection.
-
-Planned API surface:
+- FastAPI with separate routers, schemas, ORM models, configuration, database access, and SLA policy logic.
+- SQLAlchemy 2.x ORM with Alembic-controlled schema evolution.
+- Pydantic validation for service state, incident severity, and incident lifecycle.
+- Structured application output to stdout/stderr for container collection.
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/` | API identity/version links |
-| GET | `/health` | Liveness |
+| GET | `/` | API identity and endpoint links |
+| GET | `/health` | Process liveness |
 | GET | `/ready` | Database-aware readiness |
 | GET | `/metrics` | Prometheus metrics |
-| GET | `/api/services` | List services |
-| POST | `/api/services` | Create a service |
-| GET | `/api/incidents` | List/filter incidents |
-| GET | `/api/incidents/{id}` | Incident detail |
-| POST | `/api/incidents` | Declare an incident |
-| PUT | `/api/incidents/{id}` | Update lifecycle/details |
-| DELETE | `/api/incidents/{id}` | Delete an incident |
-| GET | `/api/incidents/stats` | Dashboard summary |
+| GET/POST | `/api/services` | List and create services |
+| GET/PUT/DELETE | `/api/services/{id}` | Read, update, and delete a service |
+| GET/POST | `/api/incidents` | List/filter and create incidents |
+| GET/PUT/DELETE | `/api/incidents/{id}` | Read, update, and delete an incident |
+| GET | `/api/incidents/stats` | Database-derived dashboard statistics |
 
-### Data model
+Liveness and readiness are separate by design. `/health` proves the process can respond, while `/ready` performs a database query and prevents traffic from reaching an API with an unavailable dependency.
+
+## Data model
 
 ```mermaid
 erDiagram
@@ -89,10 +68,10 @@ erDiagram
     SERVICE {
         int id PK
         string name UK
-        string description
-        string owner
-        string tier
+        text description
+        string status
         datetime created_at
+        datetime updated_at
     }
     INCIDENT {
         int id PK
@@ -108,155 +87,119 @@ erDiagram
     }
 ```
 
-Rules:
+Service status values are Operational, Degraded, Major Outage, and Maintenance. Incident severities are P1 Critical through P4 Low; lifecycle states are Open, Acknowledged, Investigating, and Resolved. Resolving an incident sets `resolved_at`, reopening it clears that timestamp, and the service foreign key uses restricted deletion to preserve incident history.
 
-- Severities: `P1_CRITICAL`, `P2_HIGH`, `P3_MEDIUM`, `P4_LOW`.
-- Statuses: `OPEN`, `ACKNOWLEDGED`, `INVESTIGATING`, `RESOLVED`.
-- `resolved_at` is set only when status becomes Resolved and cleared if reopened.
-- SLA risk is initially calculated from severity and incident age; no separate workflow engine is needed.
-- All timestamps are stored in UTC and rendered in the user's locale.
+## Database and migrations
 
-### PostgreSQL
+PostgreSQL 17 is used in development, CI, Compose, local Kubernetes, and the completed EKS evidence run. Alembic creates both domain tables, constraints, and incident indexes. Host-run development reaches Compose PostgreSQL on `localhost:5433`; containers use `postgres:5432`.
 
-- Local development runs PostgreSQL in Compose with a named volume.
-- Tests use an isolated SQLite database or ephemeral test database.
-- Classroom Kubernetes deploys PostgreSQL with a PVC and Kubernetes Secret references.
-- RDS is intentionally excluded because the rubric asks for VPC/EKS, while RDS would add cost and operational scope.
+Tests use a dedicated PostgreSQL database whose name must end with `_test`. The fixture applies the real migration chain, overrides the FastAPI database dependency, and clears rows around every test.
 
 ## Containers and local development
 
 ```mermaid
-flowchart TB
-    Compose[Docker Compose] --> FE[frontend :3000]
+flowchart LR
+    Compose --> FE[frontend :3000 to :8080]
     Compose --> BE[backend :8000]
-    Compose --> PG[postgres :5432]
+    Compose --> PG[postgres :5433 to :5432]
     FE -->|Nginx /api proxy| BE
-    BE --> PG
+    BE -->|postgres:5432| PG
 ```
 
-- Compose includes health checks and dependency readiness, not only startup order.
-- Both runtime containers use numeric non-root users.
-- No real secrets are baked into images. Local development values are non-production defaults or supplied via untracked environment variables.
+Compose uses health-based dependency ordering. The backend runs as UID/GID 10001, the frontend runtime runs as UID/GID 101, and both images have CPU-efficient health probes. Backend startup applies migrations before Uvicorn begins accepting requests.
 
 ## CI/CD and supply chain
 
-```mermaid
-flowchart LR
-    Push[Push to main / PR] --> Test[Pytest + frontend lint/build]
-    Test --> Build[Build frontend + backend images]
-    Build --> Scan[Trivy HIGH/CRITICAL gate]
-    Scan --> PushImages[Push SHA tags to GHCR]
-    PushImages --> Deploy[Helm deployment when cluster credentials are configured]
-```
+The pipeline runs on pushes and pull requests to `main`:
 
-- Tests must pass before image work begins.
-- Actions and third-party steps use pinned major/release versions and least-privilege permissions.
-- Image identity is `ghcr.io/<owner>/incidentops-{frontend,backend}:<full-or-short-commit-sha>`; production deployment never depends on `latest`.
-- GitHub's built-in token publishes packages; no personal token is stored when unnecessary.
-- Trivy scans both runtime images and fails on HIGH/CRITICAL results. Any exception must be documented and time-bounded, not silently ignored.
+1. Start an ephemeral PostgreSQL service.
+2. Install backend dependencies and run 16 Pytests.
+3. Install frontend dependencies, lint, and build.
+4. Build backend and frontend runtime images.
+5. Scan both images with Trivy and fail on HIGH/CRITICAL findings.
+6. On successful `main` pushes, publish both images to GHCR using the full Git commit SHA.
 
-## AWS and Terraform
+Pull requests never publish. No `latest` tag is produced. Workflow permissions default to repository-content read access, with package write access limited to the publishing job.
 
-Terraform owns:
+## Terraform and verified AWS topology
 
-- One tagged VPC.
-- At least two public subnets across two Availability Zones, as required by the rubric.
-- Private subnets only if the final rehearsed design requires them.
-- EKS control plane using a currently supported standard-support Kubernetes version.
-- One minimal managed worker node group sized only for the demo.
-- Security groups, IAM roles/policies, and outputs needed to connect kubectl.
+Terraform owns the following short-lived academic environment:
 
-Terraform state stays local for this single-student capstone unless a free/approved remote-state solution is later justified. State, plan binaries, `.terraform/`, kubeconfig, and variable files with values are ignored by Git. No credentials appear in HCL or `terraform.tfvars.example`.
+- One dedicated `10.0.0.0/16` VPC.
+- Two public `/24` subnets in separate `ap-south-1` Availability Zones.
+- Internet Gateway, public route table, route, and associations.
+- EKS control plane with public access restricted to an operator `/32` and private endpoint access enabled.
+- One managed `t3.medium` node target with min/desired/max scaling of 1/1/2 and a 20 GiB root disk.
+- Cluster, node, and EBS CSI IAM roles and policy attachments.
+- EKS Pod Identity Agent, EBS CSI add-on, and Pod Identity association.
+
+The design intentionally contains no NAT Gateway, RDS/Aurora, ElastiCache, Elastic IP, Route 53 hosted zone, standalone EC2 instance, or AWS Load Balancer. It is an academic cost-conscious topology, not a production network reference.
+
+The verified evidence run used EKS 1.36. The initial plan was 21 add, 0 change, 0 destroy. The cluster, node group, and worker became Active/Ready; IncidentOps and its EBS-backed PostgreSQL PVC worked; and evidence was captured. Application workloads were then uninstalled and Terraform completed 0 add, 0 change, 21 destroy. The final Terraform state list was empty.
+
+Terraform state, backups, plans, `.terraform/`, kubeconfig, and real variable files remain local and Git-ignored.
 
 ## Kubernetes and Helm
 
-Namespace: `incidentops`.
+The `incidentops` chart contains:
 
-The chart includes:
+- Two-replica backend Deployment, ClusterIP Service, probes, resources, and HPA.
+- Two-replica frontend Deployment, ClusterIP Service, probes, and generated Nginx configuration.
+- PostgreSQL StatefulSet, Secret, Service, and 1 GiB `ReadWriteOnce` PVC.
+- Revision-scoped Alembic migration Job and backend schema-wait init containers.
+- Hostless NGINX Ingress routing `/api` to the backend and `/` to the frontend.
+- ServiceMonitor for Prometheus discovery.
 
-- Frontend Deployment and ClusterIP Service, minimum two replicas in grading values.
-- Backend Deployment and ClusterIP Service, minimum two replicas, resources, probes, and metrics port.
-- PostgreSQL workload, Service, Secret references, and PVC for the classroom demo.
-- Ingress routing `/` to frontend and `/api` to the backend Service's actual port.
-- Backend HPA using CPU utilization, with CPU requests and Metrics Server prerequisite documented.
-- ServiceMonitor selected by kube-prometheus-stack.
-- `values-local.yaml` and `values-aws.yaml` so environment differences do not require editing templates.
+The chart was linted, rendered, installed locally, installed on EKS, and upgraded successfully. Local and AWS deployments use the same templates; image SHAs and install-time secrets are supplied through values or explicit Helm overrides.
 
-Secrets are supplied at install time or created outside committed values. The chart will be checked with `helm lint`, `helm template`, server/client dry runs, and real deployment.
+The PostgreSQL container sets `PGDATA=/var/lib/postgresql/data/pgdata` so an EBS filesystem containing `lost+found` can be mounted safely at `/var/lib/postgresql/data`.
 
-## Ingress
+## Autoscaling and observability
 
-- Local: free NGINX Ingress Controller and a hosts-file name such as `incidentops.local`.
-- AWS: choose the least-cost controller/path that works in the rehearsed environment and explicitly verify any LoadBalancer charge before creation.
-- `/api` is routed before `/`; frontend Nginx also supports same-origin local proxying.
-- TLS and a purchased domain are intentionally not required for the rubric; no paid domain is planned.
+The backend HPA has a minimum of two replicas, maximum of five, and 50% CPU target. CPU requests provide the denominator for utilization, and Metrics Server provides resource metrics. Controlled local load demonstrated scaling from 2 to 4 to 5 replicas.
 
-## HPA and reliability
-
-- Backend starts at two replicas and scales within a conservative maximum.
-- CPU requests make utilization meaningful.
-- Metrics Server supplies resource metrics.
-- Controlled load is generated only against the demo application and stopped after evidence capture.
-- Probes use `/health` and `/ready`; they are not interchangeable.
-
-## Monitoring
-
-- `prometheus-fastapi-instrumentator` (or equivalent free library) exposes request count, latency, and status metrics.
-- kube-prometheus-stack installs Prometheus and Grafana.
-- ServiceMonitor discovers the backend by matching labels and the named metrics port.
-- Grafana dashboard is provisioned from source-controlled JSON/ConfigMap, with panels for request rate, latency, and 5xx responses.
-- Port-forwarding is preferred for private administrative access during the demo.
+`prometheus-fastapi-instrumentator` exposes request count, response status, and latency metrics. A selector-scoped ServiceMonitor connects the backend to kube-prometheus-stack. Grafana provisions the IncidentOps Observability dashboard from source-controlled values with request-rate, p95-latency, and 5xx-rate panels.
 
 ## Troubleshooting exercises
 
-Two isolated manifests intentionally create:
+Two isolated exercises use dedicated names and labels:
 
-1. `ImagePullBackOff` through a nonexistent image tag.
-2. A Service with no endpoints through a selector/Pod-label mismatch.
+1. A nonexistent image tag produces `ImagePullBackOff`; Pod state, `describe`, and events expose the pull failure.
+2. A healthy Pod listens on port 8080 while its Service incorrectly forwards to `targetPort: 9999`; Service, EndpointSlice, Pod-port inspection, and failed requests identify the mismatch before it is corrected.
 
-The runbook covers `get`, `describe`, logs, events, labels, endpoints, root cause, correction, and recovery. Faults use separate names and cannot break the main release.
+The exercises were reproduced, diagnosed, recovered, and cleaned up without changing the Helm-managed release.
 
-## Planned repository structure
+## Final repository structure
 
 ```text
 IncidentOps/
 ├── .github/workflows/ci-cd.yml
 ├── backend/
 │   ├── alembic/versions/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── config.py
-│   │   ├── db.py
-│   │   ├── main.py
-│   │   ├── models.py
-│   │   └── schemas.py
+│   ├── app/api/
+│   ├── app/domain/
+│   ├── app/models/
+│   ├── app/schemas/
 │   ├── tests/
 │   ├── Dockerfile
-│   ├── pytest.ini
 │   └── requirements.txt
+├── evidence/
 ├── frontend/
-│   ├── src/
+│   ├── src/components/
+│   ├── src/services/
 │   ├── Dockerfile
 │   └── nginx.conf
 ├── helm/incidentops/
-│   ├── templates/
-│   ├── Chart.yaml
-│   ├── values.yaml
-│   ├── values-local.yaml
-│   └── values-aws.yaml
 ├── k8s/namespace.yaml
-├── monitoring/
-├── scripts/
+├── monitoring/kube-prometheus-stack-values.yaml
 ├── terraform/
 ├── troubleshooting/
 ├── docker-compose.yml
 └── README.md
 ```
 
-## Cost boundary
+## Security and cost boundary
 
-All planned development tools and hosted source/package/CI features use free/open-source or free-tier options. AWS is the explicit exception.
+Application containers run without root privileges, images are promoted only after tests and security scans, Kubernetes probes distinguish dependency readiness from process liveness, and public EKS API access rejects `0.0.0.0/0`. No real secret is committed.
 
-Amazon EKS currently charges per cluster-hour, and worker nodes, EBS, public IPv4, and networking are additional. NAT Gateway also charges while provisioned plus data processing. Therefore the architecture is rehearsed locally, created once for grading, observed for only the required evidence window, and destroyed the same session. AWS Budgets alerts are helpful but delayed and are not a hard spending cap; the destroy checklist is the primary control.
-
-Official references: [Amazon EKS pricing](https://aws.amazon.com/eks/pricing/), [Amazon VPC/NAT Gateway pricing](https://aws.amazon.com/vpc/pricing/), and [AWS Budgets pricing](https://aws.amazon.com/aws-cost-management/aws-budgets/pricing/).
+AWS was the only paid platform used. The environment was timeboxed, no NAT/RDS/LB resources were added, the application data volume was removed by Kubernetes, and the Terraform-managed infrastructure was destroyed immediately after evidence capture.
