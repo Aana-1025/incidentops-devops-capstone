@@ -1,0 +1,18 @@
+M10 release SHA: 2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+NAME       	NAMESPACE  	REVISION	UPDATED                              	STATUS  	CHART            	APP VERSION
+incidentops	incidentops	6       	2026-10-17 17:46:00.7486374 +0530 IST	deployed	incidentops-0.1.0	0.2.0      
+deployment "incidentops-backend" successfully rolled out
+deployment "incidentops-frontend" successfully rolled out
+NAME                                    READY   STATUS      RESTARTS   AGE     IP          NODE             NOMINATED NODE   READINESS GATES
+incidentops-backend-59d88d4755-nm6qf    1/1     Running     0          3m32s   10.1.1.24   docker-desktop   <none>           <none>
+incidentops-backend-59d88d4755-p9hbn    1/1     Running     0          107s    10.1.1.29   docker-desktop   <none>           <none>
+incidentops-frontend-8459788d6f-5hh7v   1/1     Running     0          3m32s   10.1.1.25   docker-desktop   <none>           <none>
+incidentops-frontend-8459788d6f-6jdn9   1/1     Running     0          2m46s   10.1.1.28   docker-desktop   <none>           <none>
+incidentops-migrate-6-ppf7d             0/1     Completed   0          3m31s   10.1.1.26   docker-desktop   <none>           <none>
+incidentops-postgresql-0                1/1     Running     0          3m26s   10.1.1.27   docker-desktop   <none>           <none>
+NAME                   READY   UP-TO-DATE   AVAILABLE   AGE
+incidentops-backend    2/2     2            2           21h
+incidentops-frontend   2/2     2            2           21h
+Backend image: ghcr.io/aana-1025/incidentops-backend:2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+Frontend image: ghcr.io/aana-1025/incidentops-frontend:2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+Exact SHA verification: PASS

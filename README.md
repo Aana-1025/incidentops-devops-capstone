@@ -193,7 +193,9 @@ Development database passwords in Compose and default Helm values are classroom-
 
 Detailed evidence is organized by rubric module in [evidence/README.md](evidence/README.md). The external original capture folder is preserved separately; the repository contains only a reviewed curated copy.
 
-Verified status before final M10 recording:
+For my final deployment demonstration, I made a small visible UI change by adding an SLA policy quick reference, pushed it to `main`, and let the normal GitHub Actions pipeline test, scan, and publish new SHA-tagged images. I then upgraded the local Docker Desktop Helm release to that exact application commit, verified both deployed image SHAs, and confirmed the change and live data through the browser and API. This final M10 deployment was local; it did not recreate the earlier AWS environment.
+
+Final verified status:
 
 - 16 backend tests pass.
 - Frontend lint and production build pass.
@@ -201,4 +203,5 @@ Verified status before final M10 recording:
 - GitHub Actions builds, scans, and publishes both SHA-tagged images.
 - Local Kubernetes, Helm, Ingress, PVC, HPA, Prometheus, Grafana, and troubleshooting flows were verified.
 - AWS VPC/EKS deployment and application operation were verified, then all project infrastructure was destroyed successfully.
-- The final M10 change-to-deployment recording is intentionally tracked as the remaining submission step.
+- The M10 application release is `2b76fa3c3b1c580fe48d4b3b5504c4206793061d`; GitHub Actions run [#11](https://github.com/Aana-1025/incidentops-devops-capstone/actions/runs/39031611188) passed, and Helm revision 6 ran both application images at that SHA.
+- Final M10 deployment and CRUD evidence is indexed in [evidence/M10-demo/README.md](evidence/M10-demo/README.md).

@@ -1,0 +1,16 @@
+Kubernetes context: docker-desktop
+M10 release SHA: 2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+Release "incidentops" has been upgraded. Happy Helming!
+NAME: incidentops
+LAST DEPLOYED: Sat Oct 17 17:46:00 2026
+NAMESPACE: incidentops
+STATUS: deployed
+REVISION: 6
+DESCRIPTION: Upgrade complete
+TEST SUITE: None
+NOTES:
+IncidentOps is installed in namespace incidentops.
+
+Check the release:
+  kubectl get pods,svc,ingress,pvc -n incidentops
+The Ingress routes / to the frontend and /api to the backend.
