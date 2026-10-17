@@ -28,3 +28,14 @@ A read-only query in the PostgreSQL Pod confirmed that the useful `Checkout API`
 - [`m10-05-rollout-sha.txt`](m10-05-rollout-sha.txt) — genuine rollout, Pod readiness, migration, and immutable image output.
 
 This final M10 deployment used local Docker Desktop Kubernetes. It did **not** recreate or modify AWS infrastructure. The earlier AWS/EKS demonstration remains separate historical evidence under `M7-terraform-aws/` and `M8-kubernetes-helm/`.
+
+## Final GitOps supplement
+
+The historical M10 deployment above remains the controlled manual Helm demonstration at release SHA `2b76fa3c3b1c580fe48d4b3b5504c4206793061d`. Argo CD was added afterward as a separate local supplement for the final submission walkthrough; it does not rewrite the M10 deployment history.
+
+Argo CD `v3.5.5` runs in the `argocd` namespace on Docker Desktop. The `incidentops-gitops` Application watches this public repository, renders `helm/incidentops` with `values-gitops.yaml`, and reconciles the isolated `incidentops-gitops` namespace. It reached `Synced` and `Healthy`; both backend and frontend ran the same immutable M10 SHA, PostgreSQL was Ready, and the migration Job completed. The original `incidentops` release remained separate.
+
+- [`m10-06-argocd-sync.txt`](m10-06-argocd-sync.txt) — genuine non-secret Application, workload, Pod, image, and namespace output.
+- [`m10-07-argocd-synced.png`](m10-07-argocd-synced.png) — real local Argo CD UI showing the Application as Healthy and Synced.
+
+Final walkthrough artifacts are under [`demo/`](../../demo/README.md).

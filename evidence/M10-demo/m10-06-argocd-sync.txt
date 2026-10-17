@@ -1,0 +1,29 @@
+$ kubectl config current-context
+docker-desktop
+
+$ kubectl get application.argoproj.io incidentops-gitops -n argocd -o custom-columns='NAME:.metadata.name,REPOSITORY:.spec.source.repoURL,REVISION:.spec.source.targetRevision,PATH:.spec.source.path,DESTINATION:.spec.destination.namespace,SYNC:.status.sync.status,HEALTH:.status.health.status,RESOLVED_REVISION:.status.sync.revision'
+NAME                 REPOSITORY                                                     REVISION   PATH               DESTINATION          SYNC     HEALTH    RESOLVED_REVISION
+incidentops-gitops   https://github.com/Aana-1025/incidentops-devops-capstone.git   main       helm/incidentops   incidentops-gitops   Synced   Healthy   a113e0eb94e7e39bc35df23eb742cd6de64ffa3d
+
+$ kubectl get deployment,statefulset,job -n incidentops-gitops
+NAME                                          READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/incidentops-gitops-backend    2/2     2            2           2m28s
+deployment.apps/incidentops-gitops-frontend   2/2     2            2           2m28s
+
+NAME                                             READY   AGE
+statefulset.apps/incidentops-gitops-postgresql   1/1     2m28s
+
+NAME                                     STATUS     COMPLETIONS   DURATION   AGE
+job.batch/incidentops-gitops-migrate-1   Complete   1/1           86s        2m27s
+
+$ kubectl get pods -n incidentops-gitops -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready,STATUS:.status.phase,IMAGES:.spec.containers[*].image'
+NAME                                           READY   STATUS      IMAGES
+incidentops-gitops-backend-845d7d6877-bbvd8    true    Running     ghcr.io/aana-1025/incidentops-backend:2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+incidentops-gitops-backend-845d7d6877-nmx25    true    Running     ghcr.io/aana-1025/incidentops-backend:2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+incidentops-gitops-frontend-66dd55c578-c4fdn   true    Running     ghcr.io/aana-1025/incidentops-frontend:2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+incidentops-gitops-frontend-66dd55c578-rjbhj   true    Running     ghcr.io/aana-1025/incidentops-frontend:2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+incidentops-gitops-migrate-1-4kz4z             false   Succeeded   ghcr.io/aana-1025/incidentops-backend:2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+incidentops-gitops-postgresql-0                true    Running     postgres:17-alpine
+
+$ kubectl get ingress -n incidentops-gitops
+No resources found in incidentops-gitops namespace.

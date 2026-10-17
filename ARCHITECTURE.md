@@ -24,7 +24,7 @@ flowchart TB
     Ingress --> Frontend["React frontend"]
     Ingress --> Backend["FastAPI backend"]
     Frontend --> Backend
-    Backend --> PostgreSQL[("PostgreSQL")]
+    Backend --> PostgreSQL["PostgreSQL"]
     Backend --> Metrics["Prometheus metrics"]
     Metrics --> Prometheus["Prometheus"]
     Prometheus --> Grafana["Grafana"]

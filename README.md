@@ -2,7 +2,9 @@
 
 I built IncidentOps as my university DevOps capstone project. It is an incident and service reliability management platform where I can register services, report incidents, track their severity and lifecycle, and see operational statistics and SLA risk in one dashboard.
 
-The application is intentionally small enough to understand end to end, but the delivery path is complete: automated tests, non-root containers, GitHub Actions, Trivy, GHCR, Terraform, AWS EKS, Kubernetes, Helm, autoscaling, Prometheus, Grafana, and troubleshooting exercises.
+The application is intentionally small enough to understand end to end, but the delivery path is complete: automated tests, non-root containers, GitHub Actions, Trivy, GHCR, Terraform, AWS EKS, Kubernetes, Helm, Argo CD, autoscaling, Prometheus, Grafana, and troubleshooting exercises.
+
+![IncidentOps dashboard with live service and incident data](docs/images/incidentops-dashboard.png)
 
 ## What the application does
 
@@ -17,18 +19,23 @@ The application is intentionally small enough to understand end to end, but the 
 
 ```mermaid
 flowchart LR
-    Browser[React dashboard] -->|same-origin /api| Nginx[Nginx frontend]
-    Nginx --> FastAPI[FastAPI backend]
-    FastAPI --> PostgreSQL[(PostgreSQL)]
-    FastAPI --> Metrics[/metrics]
-    Metrics --> Prometheus
-    Prometheus --> Grafana
+    Developer["Developer"] --> GitHub["GitHub repository"]
+    GitHub --> Actions["GitHub Actions"]
+    Actions --> Tests["Tests and builds"]
+    Tests --> Trivy["Trivy security scans"]
+    Trivy --> GHCR["GHCR SHA-tagged images"]
 
-    GitHub[GitHub push] --> Actions[GitHub Actions]
-    Actions --> Tests[Pytest + lint + build]
-    Tests --> Trivy[Trivy gate]
-    Trivy --> GHCR[SHA-tagged images]
-    GHCR --> Helm[Controlled Helm deployment]
+    GitHub --> ArgoCD["Argo CD desired state"]
+    ArgoCD --> Helm["Helm chart"]
+    Helm --> Kubernetes["Docker Desktop Kubernetes"]
+
+    Browser["Browser"] --> Ingress["NGINX Ingress"]
+    Ingress --> Frontend["React frontend"]
+    Ingress --> Backend["FastAPI backend"]
+    Backend --> PostgreSQL["PostgreSQL"]
+    Backend --> Metrics["Prometheus metrics"]
+    Metrics --> Prometheus["Prometheus"]
+    Prometheus --> Grafana["Grafana"]
 ```
 
 I kept `/health` and `/ready` separate because a process can be alive while its database dependency is unavailable. Kubernetes uses `/health` for liveness and `/ready` before routing traffic.
@@ -45,7 +52,7 @@ I kept `/health` and `/ready` separate because a process can be alive while its 
 | CI/CD | GitHub Actions, GHCR, immutable Git SHA tags |
 | Security | Trivy HIGH/CRITICAL image gate |
 | Infrastructure | Terraform, AWS VPC, Amazon EKS |
-| Platform | Kubernetes, Helm, NGINX Ingress, HPA |
+| Platform | Kubernetes, Helm, Argo CD, NGINX Ingress, HPA |
 | Observability | Prometheus, Grafana, ServiceMonitor |
 
 ## Repository structure
@@ -53,7 +60,10 @@ I kept `/health` and `/ready` separate because a process can be alive while its 
 ```text
 IncidentOps/
 ├── .github/workflows/ci-cd.yml
+├── argocd/                    # Local GitOps Application definition
 ├── backend/                    # FastAPI, models, migrations, and tests
+├── demo/                       # Final video and presentation artifacts
+├── docs/images/                # README application screenshot
 ├── frontend/                   # React/Vite application and Nginx config
 ├── evidence/                   # Curated M1-M10 grading evidence
 ├── helm/incidentops/           # Complete application Helm chart
@@ -158,6 +168,14 @@ NGINX Ingress routes `/` to the frontend and `/api` to the backend. The frontend
 
 PostgreSQL uses a 1 GiB `ReadWriteOnce` PVC. Its `PGDATA` points to a subdirectory so dynamically provisioned filesystems containing `lost+found` work correctly. A revision-scoped Helm migration Job runs `alembic upgrade head` once, while backend init containers wait for the database schema to reach the Alembic head.
 
+## Argo CD and GitOps
+
+GitHub Actions is the CI and image-publishing path: a push runs tests and builds, scans both images with Trivy, and publishes immutable SHA tags to GHCR. It does not deploy to Kubernetes.
+
+The final GitOps supplement installs Argo CD on Docker Desktop and uses the source-controlled [`argocd/application.yaml`](argocd/application.yaml) to reconcile this repository's Helm chart into the isolated `incidentops-gitops` namespace. Automated sync, pruning, and self-healing are scoped to that namespace. Both application images are pinned to the verified M10 SHA `2b76fa3c3b1c580fe48d4b3b5504c4206793061d`; Ingress, HPA, and ServiceMonitor creation are disabled for the supplement so it cannot conflict with the existing `incidentops` release.
+
+The historical M10 deployment remains a controlled manual Helm upgrade, and the earlier AWS/EKS demonstration did not use Argo CD. The local supplement proves the separate Git desired state to Argo CD to Helm to Kubernetes flow without recreating AWS infrastructure.
+
 ## Autoscaling and observability
 
 The backend HPA starts at two replicas, scales to five, and targets 50% CPU utilization. CPU requests are defined because Kubernetes needs them to calculate utilization, and Metrics Server supplies the resource metrics. During local verification, controlled load scaled the backend from 2 to 4 and then 5 replicas.
@@ -205,3 +223,24 @@ Final verified status:
 - AWS VPC/EKS deployment and application operation were verified, then all project infrastructure was destroyed successfully.
 - The M10 application release is `2b76fa3c3b1c580fe48d4b3b5504c4206793061d`; GitHub Actions run [#11](https://github.com/Aana-1025/incidentops-devops-capstone/actions/runs/39031611188) passed, and Helm revision 6 ran both application images at that SHA.
 - Final M10 deployment and CRUD evidence is indexed in [evidence/M10-demo/README.md](evidence/M10-demo/README.md).
+
+## Demo and presentation
+
+- [Final Demo Video](demo/IncidentOps_Final_Demo_Antara_Utane.mp4)
+- [Presentation — PPTX](demo/IncidentOps_Presentation_Antara_Utane.pptx)
+- [Presentation — PDF](demo/IncidentOps_Presentation_Antara_Utane.pdf)
+
+## Scope and limitations
+
+- IncidentOps is an academic reliability-management platform, not a production PagerDuty replacement.
+- Authentication, RBAC, and multi-tenancy are outside this capstone scope.
+- PostgreSQL runs inside Kubernetes for the demonstration instead of using a managed production database.
+- The AWS environment was intentionally timeboxed and destroyed after evidence collection.
+- The final Argo CD GitOps demonstration runs locally on Docker Desktop rather than recreating AWS.
+- CI publishes immutable images; image versions are pinned explicitly instead of using an automated image updater.
+
+## Author
+
+Antara Utane
+
+Email: [antarautane11@gmail.com](mailto:antarautane11@gmail.com)
