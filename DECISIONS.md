@@ -262,6 +262,16 @@ Official pricing references: [EKS](https://aws.amazon.com/eks/pricing/), [VPC/NA
 - **Local Kubernetes:** Docker Desktop Kubernetes was used for Helm, Ingress, HPA, monitoring, and troubleshooting verification.
 - **Ingress:** NGINX Ingress was used locally and on EKS. Access for the evidence session did not require an AWS Load Balancer.
 - **Repository visibility:** The repository and GHCR packages are intended to remain public for grading.
-- **Image identity:** The verified Helm baseline uses an immutable full commit SHA. The final M10 demonstration will override both image tags with its own newly published SHA.
+- **Image identity:** The verified Helm baseline uses an immutable full commit SHA. The final M10 demonstration used its newly published SHA for both application images.
 - **Cloud lifecycle:** The Terraform-managed AWS environment was created only for the evidence window and was then destroyed successfully. The separately created bootstrap identity and administrative role were deliberately outside Terraform's resource scope.
 - **License and personal branding:** These remain optional presentation choices and do not affect the technical architecture.
+
+## ADR-025 — Add an isolated local Argo CD supplement
+
+**Status:** Accepted
+
+**Decision:** Add a source-controlled Argo CD Application that watches `helm/incidentops` on `main` and reconciles it into `incidentops-gitops` on Docker Desktop. Pin both images to the verified M10 SHA and disable Ingress, HPA, and ServiceMonitor resources for this isolated copy. Keep the existing `incidentops` Helm release unchanged.
+
+**Why:** The final submission walkthrough explicitly asks for a synced Argo CD application and GitOps flow. A local, isolated deployment proves Git desired state to Argo CD to Helm to Kubernetes without recreating the already-destroyed AWS environment or rewriting the historical M10 deployment method.
+
+**Consequence:** GitHub Actions remains the CI and image-publishing system; it does not deploy through Argo CD. Argo CD continuously reconciles only the demonstration namespace. The earlier AWS/EKS evidence remains a manual Helm deployment, and no cloud infrastructure is recreated.

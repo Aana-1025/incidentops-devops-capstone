@@ -2,31 +2,35 @@
 
 ## System purpose
 
-IncidentOps is a modular-monolith incident and service reliability application. It combines a React operations dashboard, a FastAPI REST API, and PostgreSQL with a delivery path through Docker, GitHub Actions, GHCR, Terraform, Kubernetes, Helm, and Prometheus/Grafana.
+IncidentOps is a modular-monolith incident and service reliability application. It combines a React operations dashboard, a FastAPI REST API, and PostgreSQL with delivery through Docker, GitHub Actions, GHCR, Terraform, Kubernetes, Helm, and a final local Argo CD GitOps supplement.
 
 ## Delivery and runtime flow
 
 ```mermaid
 flowchart TB
-    Developer --> GitHub
-    GitHub --> Actions[GitHub Actions]
-    Actions --> Quality[Pytest + frontend lint/build]
-    Quality --> Images[Build backend and frontend images]
-    Images --> Trivy[Trivy HIGH/CRITICAL gate]
-    Trivy --> GHCR[Publish full-SHA tags]
-    GHCR --> Helm[Controlled manual Helm install/upgrade]
+    Developer["Developer"] --> GitHub["GitHub repository"]
+    GitHub --> Actions["GitHub Actions"]
+    Actions --> Quality["Pytest, lint, and build"]
+    Quality --> Images["Build application images"]
+    Images --> Trivy["Trivy security gate"]
+    Trivy --> GHCR["GHCR SHA-tagged images"]
 
-    Browser -->|/| Frontend[React + Nginx]
-    Browser -->|/api| Ingress[NGINX Ingress]
-    Ingress --> Frontend
-    Ingress --> Backend[FastAPI]
-    Frontend -->|same-origin /api| Backend
-    Backend --> PostgreSQL[(PostgreSQL)]
-    Prometheus -->|scrape /metrics| Backend
-    Grafana --> Prometheus
+    GitHub --> ArgoCD["Argo CD desired state"]
+    ArgoCD --> Helm["Helm chart"]
+    Helm --> LocalK8s["Docker Desktop Kubernetes"]
+    GHCR --> LocalK8s
+
+    Browser["Browser"] --> Ingress["NGINX Ingress"]
+    Ingress --> Frontend["React frontend"]
+    Ingress --> Backend["FastAPI backend"]
+    Frontend --> Backend
+    Backend --> PostgreSQL[("PostgreSQL")]
+    Backend --> Metrics["Prometheus metrics"]
+    Metrics --> Prometheus["Prometheus"]
+    Prometheus --> Grafana["Grafana"]
 ```
 
-The GitHub Actions workflow deliberately stops after publishing verified images. Kubernetes deployment remains a controlled Helm operation so cluster credentials are not stored in the repository workflow.
+The GitHub Actions workflow deliberately stops after publishing verified images. The historical M10 deployment was a controlled manual Helm upgrade. Argo CD was added later as a separate local Docker Desktop demonstration of Git desired state to Helm reconciliation; it was not used for the earlier AWS/EKS run.
 
 ## Application components
 
@@ -99,11 +103,11 @@ Tests use a dedicated PostgreSQL database whose name must end with `_test`. The 
 
 ```mermaid
 flowchart LR
-    Compose --> FE[frontend :3000 to :8080]
-    Compose --> BE[backend :8000]
-    Compose --> PG[postgres :5433 to :5432]
-    FE -->|Nginx /api proxy| BE
-    BE -->|postgres:5432| PG
+    Compose["Docker Compose"] --> FE["Frontend host 3000, container 8080"]
+    Compose --> BE["Backend port 8000"]
+    Compose --> PG["PostgreSQL host 5433, container 5432"]
+    FE -->|"Nginx API proxy"| BE
+    BE -->|"Docker DNS postgres port 5432"| PG
 ```
 
 Compose uses health-based dependency ordering. The backend runs as UID/GID 10001, the frontend runtime runs as UID/GID 101, and both images have CPU-efficient health probes. Backend startup applies migrations before Uvicorn begins accepting requests.
@@ -154,6 +158,12 @@ The chart was linted, rendered, installed locally, installed on EKS, and upgrade
 
 The PostgreSQL container sets `PGDATA=/var/lib/postgresql/data/pgdata` so an EBS filesystem containing `lost+found` can be mounted safely at `/var/lib/postgresql/data`.
 
+## Argo CD GitOps supplement
+
+The source-controlled `argocd/application.yaml` points Argo CD at this repository's `helm/incidentops` chart. The application reconciles into the separate `incidentops-gitops` namespace on Docker Desktop, with both images pinned to the verified M10 SHA. Automated synchronization, pruning, and self-healing are enabled only for that isolated namespace. Ingress, HPA, and ServiceMonitor resources are disabled for the GitOps copy to avoid conflicts with the existing `incidentops` release.
+
+This supplement proves the Git-to-Argo-CD-to-Helm-to-Kubernetes path. The AWS/EKS evidence remains an accurate record of a controlled manual Helm deployment and was destroyed after capture.
+
 ## Autoscaling and observability
 
 The backend HPA has a minimum of two replicas, maximum of five, and 50% CPU target. CPU requests provide the denominator for utilization, and Metrics Server provides resource metrics. Controlled local load demonstrated scaling from 2 to 4 to 5 replicas.
@@ -174,6 +184,7 @@ The exercises were reproduced, diagnosed, recovered, and cleaned up without chan
 ```text
 IncidentOps/
 ├── .github/workflows/ci-cd.yml
+├── argocd/                    # Local Argo CD Application and instructions
 ├── backend/
 │   ├── alembic/versions/
 │   ├── app/api/
@@ -183,6 +194,8 @@ IncidentOps/
 │   ├── tests/
 │   ├── Dockerfile
 │   └── requirements.txt
+├── demo/                      # Final video and presentation artifacts
+├── docs/images/               # README application screenshot
 ├── evidence/
 ├── frontend/
 │   ├── src/components/

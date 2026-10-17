@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: incidentops-gitops
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Aana-1025/incidentops-devops-capstone.git
+    targetRevision: main
+    path: helm/incidentops
+    helm:
+      releaseName: incidentops-gitops
+      valueFiles:
+        - values-gitops.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: incidentops-gitops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

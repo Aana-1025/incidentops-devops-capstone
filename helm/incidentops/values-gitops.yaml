@@ -1,0 +1,15 @@
+backend:
+  image:
+    tag: 2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+  autoscaling:
+    enabled: false
+
+frontend:
+  image:
+    tag: 2b76fa3c3b1c580fe48d4b3b5504c4206793061d
+
+serviceMonitor:
+  enabled: false
+
+ingress:
+  enabled: false
