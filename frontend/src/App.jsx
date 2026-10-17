@@ -8,6 +8,7 @@ import Modal from './components/Modal.jsx'
 import ServiceForm from './components/ServiceForm.jsx'
 import ServicesPanel from './components/ServicesPanel.jsx'
 import Sidebar from './components/Sidebar.jsx'
+import SlaPolicyReference from './components/SlaPolicyReference.jsx'
 import { EMPTY_FILTERS } from './constants.js'
 import { incidentsApi, servicesApi } from './services/api.js'
 
@@ -154,6 +155,8 @@ function App() {
         <section className="kpi-grid" aria-label="Live reliability metrics" id="metrics">
           {kpis.map((metric) => <KpiCard key={metric.label} {...metric} value={loading ? '—' : metric.value} />)}
         </section>
+
+        <SlaPolicyReference />
 
         <section className="panel incident-panel" id="incidents" aria-labelledby="incidents-title">
           <div className="section-heading incident-heading">
