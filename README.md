@@ -227,8 +227,7 @@ Final verified status:
 ## Demo and presentation
 
 - [Final Demo Video](demo/IncidentOps_Final_Demo_Antara_Utane.mp4)
-- [Presentation — PPTX](demo/IncidentOps_Presentation_Antara_Utane.pptx)
-- [Presentation — PDF](demo/IncidentOps_Presentation_Antara_Utane.pdf)
+- [Presentation — PPTX](demo/IncidentOps_Presentation_Antara_Utane.pptx) — 13 slides, including the final local Argo CD GitOps demonstration
 
 ## Scope and limitations
 
